@@ -1,0 +1,1 @@
+package kr.co.seoulit.his.patientservice.patientbasicinformation.controller;
