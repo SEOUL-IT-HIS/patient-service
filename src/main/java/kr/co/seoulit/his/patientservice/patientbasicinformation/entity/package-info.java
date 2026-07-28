@@ -1,1 +1,0 @@
-package kr.co.seoulit.his.patientservice.patientbasicinformation.entity;
