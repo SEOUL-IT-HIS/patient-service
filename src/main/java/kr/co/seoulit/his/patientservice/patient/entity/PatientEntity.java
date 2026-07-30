@@ -1,4 +1,4 @@
-package kr.co.seoulit.his.patientservice.patientRegister.entity;
+package kr.co.seoulit.his.patientservice.patient.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "PATIENT")
 
-public class PatientRegisterEntity {
+public class PatientEntity {
 
     @Id
     @GeneratedValue(

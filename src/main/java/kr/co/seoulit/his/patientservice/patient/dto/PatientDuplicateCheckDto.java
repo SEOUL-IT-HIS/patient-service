@@ -1,4 +1,4 @@
-package kr.co.seoulit.his.patientservice.patientRegister.dto;
+package kr.co.seoulit.his.patientservice.patient.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;

@@ -1,4 +1,4 @@
-package kr.co.seoulit.his.patientservice.patientRegister.dto;
+package kr.co.seoulit.his.patientservice.patient.dto;
 
 import lombok.*;
 
@@ -11,7 +11,7 @@ import java.time.LocalDate;
 @Getter
 @Setter
 @NoArgsConstructor
-public class PatientRegisterDto {
+public class PatientDto {
 
     private String patientName;
     private LocalDate birthDate;
