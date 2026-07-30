@@ -29,7 +29,7 @@ public class PatientController {
         return ApiResponse.success(patientService.createPatient(dto));
     }
 
-    @GetMapping
+    @GetMapping("/list")
     public ApiResponse<List<PatientListResponseDto>> getPatients() {
         return ApiResponse.success(patientService.getPatients());
     }
