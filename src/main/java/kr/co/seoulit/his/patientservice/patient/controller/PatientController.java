@@ -5,7 +5,6 @@ import kr.co.seoulit.his.patientservice.common.response.ApiResponse;
 import kr.co.seoulit.his.patientservice.patient.dto.PatientDuplicateCheckDto;
 import kr.co.seoulit.his.patientservice.patient.dto.PatientListResponseDto;
 import kr.co.seoulit.his.patientservice.patient.dto.PatientDto;
-import kr.co.seoulit.his.patientservice.patient.entity.PatientEntity;
 import kr.co.seoulit.his.patientservice.patient.service.PatientService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
+import kr.co.seoulit.his.patientservice.patient.dto.PatientRegisterResponseDto;
 import java.util.List;
 
 @RestController
@@ -25,7 +24,9 @@ public class PatientController {
     private final PatientService patientService;
 
     @PostMapping("/register")
-    public ApiResponse<PatientEntity> createPatient(@RequestBody PatientDto dto) {
+    public ApiResponse<PatientRegisterResponseDto> createPatient(
+            @Valid @RequestBody PatientDto dto
+    ) {
         return ApiResponse.success(patientService.createPatient(dto));
     }
 

@@ -10,9 +10,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import kr.co.seoulit.his.patientservice.patient.util.ResidentRegNoUtils;
 import java.util.List;
-
+import java.time.LocalDate;
+import kr.co.seoulit.his.patientservice.common.exception.BusinessException;
+import kr.co.seoulit.his.patientservice.common.exception.ErrorCode;
+import kr.co.seoulit.his.patientservice.patient.dto.PatientRegisterResponseDto;
 
 @Service
 @RequiredArgsConstructor
@@ -22,25 +25,40 @@ public class PatientServiceImpl implements PatientService {
     private final PatientRepository patientRepository;
 
     @Override
-    public PatientEntity createPatient(
+    public PatientRegisterResponseDto createPatient(
             PatientDto dto
     ) {
+
+        LocalDate birthDateFromResidentRegNo =
+                ResidentRegNoUtils.extractBirthDate(
+                        dto.getResidentRegNo()
+                );
+
+        if (!birthDateFromResidentRegNo.equals(dto.getBirthDate())) {
+            throw new BusinessException(
+                    ErrorCode.BIRTH_DATE_MISMATCH
+            );
+        }
+
         if (patientRepository.existsByResidentRegNo(
                 dto.getResidentRegNo()
         )) {
-            throw new IllegalArgumentException(
-                    "이미 등록된 주민등록번호입니다."
+            throw new BusinessException(
+                    ErrorCode.DUPLICATE_RESIDENT_REG_NO
             );
         }
 
         PatientEntity entity = PatientMapper.toEntity(dto);
+        PatientEntity savedPatient = patientRepository.save(entity);
 
-        return patientRepository.save(entity);
+        return PatientRegisterResponseDto.from(savedPatient);
     }
 
     @Override
     @Transactional(readOnly = true)
     public boolean isResidentRegNoDuplicate(String residentRegNo) {
+        ResidentRegNoUtils.extractBirthDate(residentRegNo);
+
         return patientRepository.existsByResidentRegNo(
                 residentRegNo
         );

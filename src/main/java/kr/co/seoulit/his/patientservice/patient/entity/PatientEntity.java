@@ -1,6 +1,7 @@
 package kr.co.seoulit.his.patientservice.patient.entity;
 
 import jakarta.persistence.*;
+import kr.co.seoulit.his.patientservice.patient.type.PatientStatus;
 import lombok.*;
 
 import java.time.LocalDate;
@@ -36,8 +37,9 @@ public class PatientEntity {
     @Column(name = "RESIDENT_REG_NO")
     private String residentRegNo;
 
-    @Column(name = "STATUS_CD")
-    private String statusCd;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "STATUS_CD", nullable = false)
+    private PatientStatus statusCd;
 
     @Column(name = "CREATED_AT")
     private LocalDateTime createdAt;

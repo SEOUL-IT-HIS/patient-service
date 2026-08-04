@@ -3,6 +3,7 @@ package kr.co.seoulit.his.patientservice.patient.dto;
 import kr.co.seoulit.his.patientservice.patient.entity.PatientEntity;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import kr.co.seoulit.his.patientservice.patient.type.PatientStatus;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -15,7 +16,7 @@ public class PatientListResponseDto {
     private final String patientName;
     private final String residentRegNo;
     private final LocalDate birthDate;
-    private final String statusCd;
+    private final PatientStatus statusCd;
     private final LocalDateTime createdAt;
     private final LocalDateTime updatedAt;
 
