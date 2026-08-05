@@ -16,6 +16,9 @@ import java.time.LocalDate;
 import kr.co.seoulit.his.patientservice.common.exception.BusinessException;
 import kr.co.seoulit.his.patientservice.common.exception.ErrorCode;
 import kr.co.seoulit.his.patientservice.patient.dto.PatientRegisterResponseDto;
+import kr.co.seoulit.his.patientservice.patient.dto.PatientValidationResponseDto;
+import kr.co.seoulit.his.patientservice.patient.type.PatientStatus;
+import kr.co.seoulit.his.patientservice.patient.dto.PatientDetailResponseDto;
 
 @Service
 @RequiredArgsConstructor
@@ -72,5 +75,35 @@ public class PatientServiceImpl implements PatientService {
                 .stream()
                 .map(PatientListResponseDto::from)
                 .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PatientValidationResponseDto validatePatient(
+            Long patientId
+    ) {
+        boolean valid =
+                patientRepository.existsByPatientIdAndStatusCd(
+                        patientId,
+                        PatientStatus.ACTIVE
+                );
+
+        return new PatientValidationResponseDto(
+                patientId,
+                valid
+        );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PatientDetailResponseDto getPatient(Long patientId) {
+        PatientEntity patient = patientRepository.findById(patientId)
+                .orElseThrow(
+                        () -> new BusinessException(
+                                ErrorCode.PATIENT_NOT_FOUND
+                        )
+                );
+
+        return PatientDetailResponseDto.from(patient);
     }
 }

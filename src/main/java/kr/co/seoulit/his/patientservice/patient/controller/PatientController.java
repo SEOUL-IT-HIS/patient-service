@@ -14,6 +14,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import kr.co.seoulit.his.patientservice.patient.dto.PatientRegisterResponseDto;
+import jakarta.validation.constraints.Positive;
+import kr.co.seoulit.his.patientservice.patient.dto.PatientDetailResponseDto;
+import org.springframework.web.bind.annotation.PathVariable;
 import java.util.List;
 
 @RestController
@@ -41,6 +44,15 @@ public class PatientController {
     ) {
         return ApiResponse.success(
                 patientService.isResidentRegNoDuplicate(dto.getResidentRegNo())
+        );
+    }
+
+    @GetMapping("/{patientId}")
+    public ApiResponse<PatientDetailResponseDto> getPatient(
+            @PathVariable @Positive Long patientId
+    ) {
+        return ApiResponse.success(
+                patientService.getPatient(patientId)
         );
     }
 }

@@ -33,6 +33,11 @@ public enum ErrorCode {
             "허용되지 않은 환자 상태입니다."
     ),
 
+    PATIENT_NOT_FOUND(
+            HttpStatus.NOT_FOUND,
+            "환자 정보를 찾을 수 없습니다."
+    ),
+
     INTERNAL_SERVER_ERROR(
             HttpStatus.INTERNAL_SERVER_ERROR,
             "서버 오류가 발생했습니다."

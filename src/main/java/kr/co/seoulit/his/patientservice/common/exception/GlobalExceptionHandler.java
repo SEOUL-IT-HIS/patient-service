@@ -9,6 +9,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 
 @Slf4j
 @RestControllerAdvice
@@ -47,6 +48,21 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.of(
                         HttpStatus.BAD_REQUEST.value(),
                         message,
+                        null
+                ));
+    }
+
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMethodValidationException(
+            HandlerMethodValidationException exception
+    ) {
+        ErrorCode errorCode = ErrorCode.INVALID_INPUT;
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.of(
+                        HttpStatus.BAD_REQUEST.value(),
+                        errorCode.getMessage(),
                         null
                 ));
     }
