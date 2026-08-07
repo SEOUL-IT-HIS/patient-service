@@ -30,7 +30,7 @@ public enum ErrorCode {
 
     INVALID_PATIENT_STATUS(
             HttpStatus.BAD_REQUEST,
-            "허용되지 않은 환자 상태입니다."
+            "허용되지 않은 환자상태관리코드입니다."
     ),
 
     PATIENT_NOT_FOUND(

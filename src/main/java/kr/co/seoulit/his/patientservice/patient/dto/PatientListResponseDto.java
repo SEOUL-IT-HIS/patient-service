@@ -16,6 +16,7 @@ public class PatientListResponseDto {
     private final String patientName;
     private final String residentRegNo;
     private final LocalDate birthDate;
+    private final String genderCd;
     private final PatientStatus statusCd;
     private final LocalDateTime createdAt;
     private final LocalDateTime updatedAt;
@@ -28,6 +29,7 @@ public class PatientListResponseDto {
                 patient.getPatientName(),
                 maskResidentRegNo(patient.getResidentRegNo()),
                 patient.getBirthDate(),
+                patient.getGenderCd(),
                 patient.getStatusCd(),
                 patient.getCreatedAt(),
                 patient.getUpdatedAt()

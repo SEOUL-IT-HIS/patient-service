@@ -11,6 +11,7 @@ public record PatientDetailResponseDto(
         String patientName,
         String residentRegNo,
         LocalDate birthDate,
+        String genderCd,
         PatientStatus statusCd,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
@@ -21,6 +22,7 @@ public record PatientDetailResponseDto(
                 patient.getPatientName(),
                 maskResidentRegNo(patient.getResidentRegNo()),
                 patient.getBirthDate(),
+                patient.getGenderCd(),
                 patient.getStatusCd(),
                 patient.getCreatedAt(),
                 patient.getUpdatedAt()

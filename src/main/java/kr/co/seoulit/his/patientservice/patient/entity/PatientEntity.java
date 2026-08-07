@@ -37,6 +37,13 @@ public class PatientEntity {
     @Column(name = "RESIDENT_REG_NO")
     private String residentRegNo;
 
+    @Column(
+            name = "GENDER_CD",
+            nullable = false,
+            length = 2
+    )
+    private String genderCd;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "STATUS_CD", nullable = false)
     private PatientStatus statusCd;

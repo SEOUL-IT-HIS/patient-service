@@ -34,7 +34,14 @@ public class PatientDto {
     )
     private String residentRegNo;
 
-    @NotNull(message = "환자 상태는 필수입니다.")
+    @NotBlank(message = "성별은 필수입니다.")
+    @Pattern(
+            regexp = "^(01|02|03|04)$",
+            message = "성별 코드는 01, 02, 03, 04 중 하나여야 합니다."
+    )
+    private String genderCd;
+
+    @NotNull(message = "환자상태관리코드는 필수입니다.")
     private PatientStatus statusCd;
 
 }
