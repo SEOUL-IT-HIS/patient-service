@@ -7,6 +7,7 @@ import kr.co.seoulit.his.patientservice.patient.dto.PatientValidationResponseDto
 import kr.co.seoulit.his.patientservice.patient.dto.PatientDetailResponseDto;
 
 import java.util.List;
+import java.util.UUID;
 
 public interface PatientService {
     PatientRegisterResponseDto createPatient(PatientDto patientDto);
@@ -15,8 +16,8 @@ public interface PatientService {
 
     List<PatientListResponseDto> getPatients();
 
-    PatientDetailResponseDto getPatient(Long patientId);
+    PatientDetailResponseDto getPatient(UUID patientId);
 
-    PatientValidationResponseDto validatePatient(Long patientId);
+    PatientValidationResponseDto validatePatient(UUID patientId);
 }
 

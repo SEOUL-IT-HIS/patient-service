@@ -3,9 +3,13 @@ package kr.co.seoulit.his.patientservice.patient.entity;
 import jakarta.persistence.*;
 import kr.co.seoulit.his.patientservice.patient.type.PatientStatus;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.UuidGenerator;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -16,17 +20,16 @@ import java.time.LocalDateTime;
 public class PatientEntity {
 
     @Id
-    @GeneratedValue(
-            strategy = GenerationType.SEQUENCE,
-            generator = "patientSequenceGenerator")
-    @SequenceGenerator(
-            name = "patientSequenceGenerator",
-            sequenceName = "PATIENT_SEQ",
-            allocationSize = 1)
+    @GeneratedValue
+    @UuidGenerator
+    @JdbcTypeCode(SqlTypes.VARCHAR)
     @Column(
             name = "PATIENT_ID",
-            nullable = false)
-    private Long patientId;
+            nullable = false,
+            updatable = false,
+            length = 36,
+            columnDefinition = "VARCHAR2(36 CHAR)")
+    private UUID patientId;
 
     @Column(name = "PATIENT_NAME")
     private String patientName;

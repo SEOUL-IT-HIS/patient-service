@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import kr.co.seoulit.his.patientservice.patient.util.ResidentRegNoUtils;
 import java.util.List;
+import java.util.UUID;
 import java.time.LocalDate;
 import kr.co.seoulit.his.patientservice.common.exception.BusinessException;
 import kr.co.seoulit.his.patientservice.common.exception.ErrorCode;
@@ -71,7 +72,7 @@ public class PatientServiceImpl implements PatientService {
     @Transactional(readOnly = true)
     public List<PatientListResponseDto> getPatients() {
         return patientRepository
-                .findAll(Sort.by(Sort.Direction.DESC, "patientId"))
+                .findAll(Sort.by(Sort.Direction.DESC, "createdAt"))
                 .stream()
                 .map(PatientListResponseDto::from)
                 .toList();
@@ -80,7 +81,7 @@ public class PatientServiceImpl implements PatientService {
     @Override
     @Transactional(readOnly = true)
     public PatientValidationResponseDto validatePatient(
-            Long patientId
+            UUID patientId
     ) {
         boolean valid =
                 patientRepository.existsByPatientIdAndStatusCd(
@@ -96,7 +97,7 @@ public class PatientServiceImpl implements PatientService {
 
     @Override
     @Transactional(readOnly = true)
-    public PatientDetailResponseDto getPatient(Long patientId) {
+    public PatientDetailResponseDto getPatient(UUID patientId) {
         PatientEntity patient = patientRepository.findById(patientId)
                 .orElseThrow(
                         () -> new BusinessException(

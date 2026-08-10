@@ -7,12 +7,13 @@ import kr.co.seoulit.his.patientservice.patient.type.PatientStatus;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Getter
 @AllArgsConstructor
 public class PatientListResponseDto {
 
-    private final Long patientId;
+    private final UUID patientId;
     private final String patientName;
     private final String residentRegNo;
     private final LocalDate birthDate;

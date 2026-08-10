@@ -5,9 +5,10 @@ import kr.co.seoulit.his.patientservice.patient.type.PatientStatus;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 public record PatientDetailResponseDto(
-        Long patientId,
+        UUID patientId,
         String patientName,
         String residentRegNo,
         LocalDate birthDate,
