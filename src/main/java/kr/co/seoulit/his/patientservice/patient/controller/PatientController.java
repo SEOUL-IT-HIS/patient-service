@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.format.annotation.DateTimeFormat;
 import java.time.LocalDate;
 import kr.co.seoulit.his.patientservice.patient.type.PatientStatus;
+import org.springframework.web.bind.annotation.PatchMapping;
 import java.util.List;
 import java.util.UUID;
 
@@ -71,6 +72,16 @@ public class PatientController {
     ) {
         return ApiResponse.success(
                 patientService.getPatient(patientId)
+        );
+    }
+
+    @PatchMapping("/{patientId}")
+    public ApiResponse<PatientDetailResponseDto> updatePatientName(
+            @PathVariable UUID patientId,
+            @Valid @RequestBody PatientUpdateRequestDto dto
+    ) {
+        return ApiResponse.success(
+                patientService.updatePatientName(patientId, dto)
         );
     }
 

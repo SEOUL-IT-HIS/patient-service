@@ -19,6 +19,7 @@ import kr.co.seoulit.his.patientservice.patient.dto.PatientRegisterResponseDto;
 import kr.co.seoulit.his.patientservice.patient.dto.PatientValidationResponseDto;
 import kr.co.seoulit.his.patientservice.patient.type.PatientStatus;
 import kr.co.seoulit.his.patientservice.patient.dto.PatientDetailResponseDto;
+import kr.co.seoulit.his.patientservice.patient.dto.PatientUpdateRequestDto;
 
 @Service
 @RequiredArgsConstructor
@@ -88,6 +89,26 @@ public class PatientServiceImpl implements PatientService {
                 .stream()
                 .map(PatientListResponseDto::from)
                 .toList();
+    }
+
+    @Override
+    public PatientDetailResponseDto updatePatientName(
+            UUID patientId,
+            PatientUpdateRequestDto dto
+    ) {
+        PatientEntity patient = patientRepository.findById(patientId)
+                .orElseThrow(
+                        () -> new BusinessException(
+                                ErrorCode.PATIENT_NOT_FOUND
+                        )
+                );
+
+        patient.setPatientName(dto.patientName().trim());
+
+        PatientEntity updatedPatient =
+                patientRepository.saveAndFlush(patient);
+
+        return PatientDetailResponseDto.from(updatedPatient);
     }
 
     @Override

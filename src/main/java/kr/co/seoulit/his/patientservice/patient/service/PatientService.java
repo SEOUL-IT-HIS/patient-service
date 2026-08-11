@@ -7,7 +7,7 @@ import kr.co.seoulit.his.patientservice.patient.dto.PatientValidationResponseDto
 import kr.co.seoulit.his.patientservice.patient.dto.PatientDetailResponseDto;
 import java.time.LocalDate;
 import kr.co.seoulit.his.patientservice.patient.type.PatientStatus;
-
+import kr.co.seoulit.his.patientservice.patient.dto.PatientUpdateRequestDto;
 import java.util.List;
 import java.util.UUID;
 
@@ -23,6 +23,11 @@ public interface PatientService {
     );
 
     PatientDetailResponseDto getPatient(UUID patientId);
+
+    PatientDetailResponseDto updatePatientName(
+            UUID patientId,
+            PatientUpdateRequestDto dto
+    );
 
     PatientValidationResponseDto validatePatient(UUID patientId);
 }
