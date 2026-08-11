@@ -5,6 +5,8 @@ import kr.co.seoulit.his.patientservice.patient.dto.PatientDto;
 import kr.co.seoulit.his.patientservice.patient.dto.PatientRegisterResponseDto;
 import kr.co.seoulit.his.patientservice.patient.dto.PatientValidationResponseDto;
 import kr.co.seoulit.his.patientservice.patient.dto.PatientDetailResponseDto;
+import java.time.LocalDate;
+import kr.co.seoulit.his.patientservice.patient.type.PatientStatus;
 
 import java.util.List;
 import java.util.UUID;
@@ -14,7 +16,11 @@ public interface PatientService {
 
     boolean isResidentRegNoDuplicate(String residentRegNo);
 
-    List<PatientListResponseDto> getPatients();
+    List<PatientListResponseDto> getPatients(
+            String patientName,
+            LocalDate birthDate,
+            PatientStatus statusCd
+    );
 
     PatientDetailResponseDto getPatient(UUID patientId);
 

@@ -7,7 +7,6 @@ import kr.co.seoulit.his.patientservice.patient.mapper.PatientMapper;
 import kr.co.seoulit.his.patientservice.patient.repository.PatientRepository;
 import kr.co.seoulit.his.patientservice.patient.service.PatientService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import kr.co.seoulit.his.patientservice.patient.util.ResidentRegNoUtils;
@@ -70,9 +69,22 @@ public class PatientServiceImpl implements PatientService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<PatientListResponseDto> getPatients() {
+    public List<PatientListResponseDto> getPatients(
+            String patientName,
+            LocalDate birthDate,
+            PatientStatus statusCd
+    ) {
+        String normalizedPatientName =
+                patientName == null || patientName.isBlank()
+                        ? null
+                        : patientName.trim();
+
         return patientRepository
-                .findAll(Sort.by(Sort.Direction.DESC, "createdAt"))
+                .searchPatients(
+                        normalizedPatientName,
+                        birthDate,
+                        statusCd
+                )
                 .stream()
                 .map(PatientListResponseDto::from)
                 .toList();

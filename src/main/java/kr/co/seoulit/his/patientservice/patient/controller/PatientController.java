@@ -13,6 +13,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.format.annotation.DateTimeFormat;
+import java.time.LocalDate;
+import kr.co.seoulit.his.patientservice.patient.type.PatientStatus;
 import java.util.List;
 import java.util.UUID;
 
@@ -32,8 +36,24 @@ public class PatientController {
     }
 
     @GetMapping("/list")
-    public ApiResponse<List<PatientListResponseDto>> getPatients() {
-        return ApiResponse.success(patientService.getPatients());
+    public ApiResponse<List<PatientListResponseDto>> getPatients(
+            @RequestParam(required = false)
+            String patientName,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate birthDate,
+
+            @RequestParam(required = false)
+            PatientStatus statusCd
+    ) {
+        return ApiResponse.success(
+                patientService.getPatients(
+                        patientName,
+                        birthDate,
+                        statusCd
+                )
+        );
     }
 
     @PostMapping("/duplicate-check")
