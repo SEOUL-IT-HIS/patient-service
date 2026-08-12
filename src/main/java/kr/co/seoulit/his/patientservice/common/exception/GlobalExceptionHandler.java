@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @Slf4j
 @RestControllerAdvice
@@ -95,14 +97,47 @@ public class GlobalExceptionHandler {
                 ));
     }
 
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiResponse<Void>> handleTypeMismatch(
+            MethodArgumentTypeMismatchException exception
+    ) {
+        String message = String.format(
+                "요청값이 올바르지 않습니다. 파라미터: %s, 입력값: %s",
+                exception.getName(),
+                exception.getValue()
+        );
+
+        log.warn(message);
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.of(
+                        HttpStatus.BAD_REQUEST.value(),
+                        message,
+                        null
+                ));
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleNoResourceFound(
+            NoResourceFoundException exception
+    ) {
+        log.warn("요청 경로를 찾을 수 없습니다: {}", exception.getResourcePath());
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.of(
+                        HttpStatus.NOT_FOUND.value(),
+                        "요청한 경로를 찾을 수 없습니다.",
+                        null
+                ));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleUnexpectedException(
             Exception exception
     ) {
-        log.error(
-                "처리되지 않은 서버 오류: {}",
-                exception.getClass().getName()
-        );
+        log.error("처리되지 않은 서버 오류", exception);
 
         ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
 
