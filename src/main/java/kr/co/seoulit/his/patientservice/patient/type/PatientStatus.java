@@ -6,9 +6,8 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum PatientStatus {
+  ACTIVE("활성"),
+  INACTIVE("비활성");
 
-    ACTIVE("활성"),
-    INACTIVE("비활성");
-
-    private final String description;
+  private final String description;
 }
