@@ -19,6 +19,8 @@ public class PatientListResponseDto {
     private final LocalDate birthDate;
     private final String genderCd;
     private final PatientStatus statusCd;
+    private final String tempPatientYn;
+    private final String deathYn;
     private final LocalDateTime createdAt;
     private final LocalDateTime updatedAt;
 
@@ -32,6 +34,8 @@ public class PatientListResponseDto {
                 patient.getBirthDate(),
                 patient.getGenderCd(),
                 patient.getStatusCd(),
+                patient.getTempPatientYn(),
+                patient.getDeathYn(),
                 patient.getCreatedAt(),
                 patient.getUpdatedAt()
         );

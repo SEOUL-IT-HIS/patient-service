@@ -8,6 +8,7 @@ import kr.co.seoulit.his.patientservice.patient.dto.PatientDetailResponseDto;
 import java.time.LocalDate;
 import kr.co.seoulit.his.patientservice.patient.type.PatientStatus;
 import kr.co.seoulit.his.patientservice.patient.dto.PatientUpdateRequestDto;
+import kr.co.seoulit.his.patientservice.patient.dto.PatientDeathUpdateRequestDto;
 import java.util.List;
 import java.util.UUID;
 
@@ -27,6 +28,11 @@ public interface PatientService {
     PatientDetailResponseDto updatePatientName(
             UUID patientId,
             PatientUpdateRequestDto dto
+    );
+
+    PatientDetailResponseDto updateDeathStatus(
+            UUID patientId,
+            PatientDeathUpdateRequestDto dto
     );
 
     PatientDetailResponseDto deactivatePatient(UUID patientId);

@@ -19,6 +19,7 @@ public class PatientMapper {
         entity.setResidentRegNo(dto.getResidentRegNo());
         entity.setGenderCd(dto.getGenderCd());
         entity.setStatusCd(dto.getStatusCd());
+        entity.setTempPatientYn(dto.getTempPatientYn());
         return entity;
     }
 }

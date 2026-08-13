@@ -14,6 +14,9 @@ public record PatientDetailResponseDto(
         LocalDate birthDate,
         String genderCd,
         PatientStatus statusCd,
+        String tempPatientYn,
+        String deathYn,
+        LocalDateTime deathDtm,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
@@ -25,6 +28,9 @@ public record PatientDetailResponseDto(
                 patient.getBirthDate(),
                 patient.getGenderCd(),
                 patient.getStatusCd(),
+                patient.getTempPatientYn(),
+                patient.getDeathYn(),
+                patient.getDeathDtm(),
                 patient.getCreatedAt(),
                 patient.getUpdatedAt()
         );

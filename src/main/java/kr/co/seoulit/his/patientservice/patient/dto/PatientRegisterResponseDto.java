@@ -18,6 +18,7 @@ public class PatientRegisterResponseDto {
     private final LocalDate birthDate;
     private final String genderCd;
     private final PatientStatus statusCd;
+    private final String tempPatientYn;
     private final LocalDateTime createdAt;
 
     public static PatientRegisterResponseDto from(
@@ -29,6 +30,7 @@ public class PatientRegisterResponseDto {
                 patient.getBirthDate(),
                 patient.getGenderCd(),
                 patient.getStatusCd(),
+                patient.getTempPatientYn(),
                 patient.getCreatedAt()
         );
     }

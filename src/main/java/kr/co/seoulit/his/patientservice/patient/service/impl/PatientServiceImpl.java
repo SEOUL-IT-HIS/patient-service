@@ -13,6 +13,7 @@ import kr.co.seoulit.his.patientservice.patient.util.ResidentRegNoUtils;
 import java.util.List;
 import java.util.UUID;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import kr.co.seoulit.his.patientservice.common.exception.BusinessException;
 import kr.co.seoulit.his.patientservice.common.exception.ErrorCode;
 import kr.co.seoulit.his.patientservice.patient.dto.PatientRegisterResponseDto;
@@ -20,6 +21,7 @@ import kr.co.seoulit.his.patientservice.patient.dto.PatientValidationResponseDto
 import kr.co.seoulit.his.patientservice.patient.type.PatientStatus;
 import kr.co.seoulit.his.patientservice.patient.dto.PatientDetailResponseDto;
 import kr.co.seoulit.his.patientservice.patient.dto.PatientUpdateRequestDto;
+import kr.co.seoulit.his.patientservice.patient.dto.PatientDeathUpdateRequestDto;
 
 @Service
 @RequiredArgsConstructor
@@ -104,6 +106,44 @@ public class PatientServiceImpl implements PatientService {
                 );
 
         patient.setPatientName(dto.patientName().trim());
+
+        PatientEntity updatedPatient =
+                patientRepository.saveAndFlush(patient);
+
+        return PatientDetailResponseDto.from(updatedPatient);
+    }
+
+    @Override
+    public PatientDetailResponseDto updateDeathStatus(
+            UUID patientId,
+            PatientDeathUpdateRequestDto dto
+    ) {
+        PatientEntity patient = patientRepository.findById(patientId)
+                .orElseThrow(
+                        () -> new BusinessException(
+                                ErrorCode.PATIENT_NOT_FOUND
+                        )
+                );
+
+        if ("Y".equals(dto.deathYn())) {
+            if (dto.deathDtm() == null) {
+                throw new BusinessException(
+                        ErrorCode.DEATH_DATE_REQUIRED
+                );
+            }
+
+            if (dto.deathDtm().isAfter(LocalDateTime.now())) {
+                throw new BusinessException(
+                        ErrorCode.INVALID_DEATH_DATE
+                );
+            }
+
+            patient.setDeathYn("Y");
+            patient.setDeathDtm(dto.deathDtm());
+        } else {
+            patient.setDeathYn("N");
+            patient.setDeathDtm(null);
+        }
 
         PatientEntity updatedPatient =
                 patientRepository.saveAndFlush(patient);

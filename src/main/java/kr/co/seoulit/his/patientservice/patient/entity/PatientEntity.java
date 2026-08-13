@@ -51,6 +51,27 @@ public class PatientEntity {
     @Column(name = "STATUS_CD", nullable = false)
     private PatientStatus statusCd;
 
+    @JdbcTypeCode(SqlTypes.CHAR)
+    @Column(
+            name = "TEMP_PATIENT_YN",
+            nullable = false,
+            length = 1,
+            columnDefinition = "CHAR(1)"
+    )
+    private String tempPatientYn = "N";
+
+    @JdbcTypeCode(SqlTypes.CHAR)
+    @Column(
+            name = "DEATH_YN",
+            nullable = false,
+            length = 1,
+            columnDefinition = "CHAR(1)"
+    )
+    private String deathYn = "N";
+
+    @Column(name = "DEATH_DTM")
+    private LocalDateTime deathDtm;
+
     @Column(name = "CREATED_AT")
     private LocalDateTime createdAt;
 

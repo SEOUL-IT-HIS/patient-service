@@ -44,5 +44,12 @@ public class PatientDto {
     @NotNull(message = "환자상태관리코드는 필수입니다.")
     private PatientStatus statusCd;
 
+    @NotBlank(message = "임시환자 여부는 필수입니다.")
+    @Pattern(
+            regexp = "^[YN]$",
+            message = "임시환자 여부는 Y 또는 N이어야 합니다."
+    )
+    private String tempPatientYn = "N";
+
 }
 

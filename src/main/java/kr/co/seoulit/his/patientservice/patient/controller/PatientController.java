@@ -85,6 +85,16 @@ public class PatientController {
         );
     }
 
+    @PatchMapping("/{patientId}/death-status")
+    public ApiResponse<PatientDetailResponseDto> updateDeathStatus(
+            @PathVariable UUID patientId,
+            @Valid @RequestBody PatientDeathUpdateRequestDto dto
+    ) {
+        return ApiResponse.success(
+                patientService.updateDeathStatus(patientId, dto)
+        );
+    }
+
     @PatchMapping("/{patientId}/deactivate")
     public ApiResponse<PatientDetailResponseDto> deactivatePatient(
             @PathVariable UUID patientId
