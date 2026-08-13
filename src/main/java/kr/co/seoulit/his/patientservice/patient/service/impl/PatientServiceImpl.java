@@ -112,6 +112,27 @@ public class PatientServiceImpl implements PatientService {
     }
 
     @Override
+    public PatientDetailResponseDto deactivatePatient(UUID patientId) {
+        PatientEntity patient = patientRepository.findById(patientId)
+                .orElseThrow(
+                        () -> new BusinessException(
+                                ErrorCode.PATIENT_NOT_FOUND
+                        )
+                );
+
+        if (patient.getStatusCd() == PatientStatus.INACTIVE) {
+            return PatientDetailResponseDto.from(patient);
+        }
+
+        patient.setStatusCd(PatientStatus.INACTIVE);
+
+        PatientEntity deactivatedPatient =
+                patientRepository.saveAndFlush(patient);
+
+        return PatientDetailResponseDto.from(deactivatedPatient);
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public PatientValidationResponseDto validatePatient(
             UUID patientId

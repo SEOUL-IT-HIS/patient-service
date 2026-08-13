@@ -29,6 +29,8 @@ public interface PatientService {
             PatientUpdateRequestDto dto
     );
 
+    PatientDetailResponseDto deactivatePatient(UUID patientId);
+
     PatientValidationResponseDto validatePatient(UUID patientId);
 }
 

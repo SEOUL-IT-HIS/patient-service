@@ -85,6 +85,15 @@ public class PatientController {
         );
     }
 
+    @PatchMapping("/{patientId}/deactivate")
+    public ApiResponse<PatientDetailResponseDto> deactivatePatient(
+            @PathVariable UUID patientId
+    ) {
+        return ApiResponse.success(
+                patientService.deactivatePatient(patientId)
+        );
+    }
+
     @GetMapping("/{patientId}/validation")
     public ApiResponse<PatientValidationResponseDto> validatePatient(
             @PathVariable UUID patientId
