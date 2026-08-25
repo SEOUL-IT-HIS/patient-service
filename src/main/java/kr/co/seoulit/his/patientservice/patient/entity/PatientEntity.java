@@ -43,7 +43,7 @@ public class PatientEntity {
 
   @Enumerated(EnumType.STRING)
   @Column(name = "STATUS_CD", nullable = false)
-  private PatientStatus statusCd;
+  private PatientStatus statusCd = PatientStatus.ACTIVE;
 
   @JdbcTypeCode(SqlTypes.CHAR)
   @Column(name = "TEMP_PATIENT_YN", nullable = false, length = 1, columnDefinition = "CHAR(1)")

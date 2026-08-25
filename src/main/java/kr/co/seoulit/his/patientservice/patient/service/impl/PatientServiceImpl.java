@@ -47,7 +47,7 @@ public class PatientServiceImpl implements PatientService {
     PatientEntity entity = PatientMapper.toEntity(dto);
     PatientEntity savedPatient = patientRepository.save(entity);
 
-    return PatientRegisterResponseDto.from(savedPatient);
+    return PatientMapper.toRegisterResponseDto(savedPatient);
   }
 
   @Override
@@ -66,7 +66,7 @@ public class PatientServiceImpl implements PatientService {
         patientName == null || patientName.isBlank() ? null : patientName.trim();
 
     return patientRepository.searchPatients(normalizedPatientName, birthDate, statusCd).stream()
-        .map(PatientListResponseDto::from)
+        .map(PatientMapper::toListResponseDto)
         .toList();
   }
 
@@ -81,7 +81,7 @@ public class PatientServiceImpl implements PatientService {
 
     PatientEntity updatedPatient = patientRepository.saveAndFlush(patient);
 
-    return PatientDetailResponseDto.from(updatedPatient);
+    return PatientMapper.toDetailResponseDto(updatedPatient);
   }
 
   @Override
@@ -103,6 +103,7 @@ public class PatientServiceImpl implements PatientService {
 
       patient.setDeathYn("Y");
       patient.setDeathDtm(dto.deathDtm());
+      patient.setStatusCd(PatientStatus.INACTIVE);
     } else {
       patient.setDeathYn("N");
       patient.setDeathDtm(null);
@@ -110,7 +111,7 @@ public class PatientServiceImpl implements PatientService {
 
     PatientEntity updatedPatient = patientRepository.saveAndFlush(patient);
 
-    return PatientDetailResponseDto.from(updatedPatient);
+    return PatientMapper.toDetailResponseDto(updatedPatient);
   }
 
   @Override
@@ -121,20 +122,25 @@ public class PatientServiceImpl implements PatientService {
             .orElseThrow(() -> new BusinessException(ErrorCode.PATIENT_NOT_FOUND));
 
     if (patient.getStatusCd() == PatientStatus.INACTIVE) {
-      return PatientDetailResponseDto.from(patient);
+      return PatientMapper.toDetailResponseDto(patient);
     }
 
     patient.setStatusCd(PatientStatus.INACTIVE);
 
     PatientEntity deactivatedPatient = patientRepository.saveAndFlush(patient);
 
-    return PatientDetailResponseDto.from(deactivatedPatient);
+    return PatientMapper.toDetailResponseDto(deactivatedPatient);
   }
 
   @Override
   @Transactional(readOnly = true)
   public PatientValidationResponseDto validatePatient(UUID patientId) {
-    boolean valid = patientRepository.existsByPatientIdAndStatusCd(patientId, PatientStatus.ACTIVE);
+    boolean valid =
+            patientRepository.existsByPatientIdAndStatusCdAndDeathYn(
+                    patientId,
+                    PatientStatus.ACTIVE,
+                    "N"
+            );
 
     return new PatientValidationResponseDto(patientId, valid);
   }
@@ -147,6 +153,6 @@ public class PatientServiceImpl implements PatientService {
             .findById(patientId)
             .orElseThrow(() -> new BusinessException(ErrorCode.PATIENT_NOT_FOUND));
 
-    return PatientDetailResponseDto.from(patient);
+    return PatientMapper.toDetailResponseDto(patient);
   }
 }

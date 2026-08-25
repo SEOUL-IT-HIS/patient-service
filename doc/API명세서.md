@@ -118,7 +118,6 @@ HTTP 상태는 `200 OK`이며 본문은 다음 형식이다.
 | `birthDate` | string(date) | Y | 오늘 또는 과거 날짜 |
 | `residentRegNo` | string | Y | 하이픈 없는 숫자 13자리 |
 | `genderCd` | string | Y | `01`, `02`, `03`, `04` |
-| `statusCd` | string | Y | `ACTIVE`, `INACTIVE` |
 | `tempPatientYn` | string | N | `Y`, `N`; 생략 시 `N` |
 
 ```json
@@ -127,10 +126,11 @@ HTTP 상태는 `200 OK`이며 본문은 다음 형식이다.
   "birthDate": "2000-08-13",
   "residentRegNo": "0008133123456",
   "genderCd": "01",
-  "statusCd": "ACTIVE",
   "tempPatientYn": "N"
 }
 ```
+
+신규 환자의 환자관리상태코드는 서버에서 `ACTIVE`로 설정한다.
 
 주민등록번호에서 계산한 생년월일과 `birthDate`가 일치해야 한다. 주민등록번호 일곱 번째 숫자가 `1`, `2`, `5`, `6`이면 1900년대, `3`, `4`, `7`, `8`이면 2000년대로 판정한다.
 
@@ -321,7 +321,8 @@ GET /api/patient/list?patientName=홍&birthDate=2000-08-13&statusCd=ACTIVE
 
 - `deathYn=Y`: 요청한 `deathDtm`을 저장한다.
 - `deathYn=N`: 요청의 `deathDtm` 값과 관계없이 저장된 사망일시를 `null`로 초기화한다.
-- 이 API는 `statusCd`를 자동으로 `INACTIVE`로 변경하지 않는다.
+- `deathYn=Y`로 사망정보를 등록하면 환자관리상태코드(`statusCd`)를 `INACTIVE`로 변경한다.
+- `deathYn=N`으로 사망정보를 해제해도 환자관리상태코드(`statusCd`)를 `ACTIVE`로 자동 변경하지 않는다.
 
 ### Response — `200 OK`
 
@@ -384,7 +385,8 @@ PATCH /api/patient/550e8400-e29b-41d4-a716-446655440000/deactivate
 | `false` | 환자가 존재하지 않거나 `statusCd=INACTIVE` |
 
 - 환자가 없어도 `404`가 아니라 `200 OK`, `valid=false`를 반환한다.
-- 현재 판정 기준은 `statusCd`뿐이다. `deathYn`, `tempPatientYn`은 판정에 사용하지 않는다.
+- `statusCd=ACTIVE`이고 `deathYn=N`인 환자만 유효한 환자로 판정한다.
+- `tempPatientYn`은 유효성 판정에 사용하지 않는다.
 - UUID 형식 자체가 잘못되면 `400 Bad Request`다.
 
 ## 12. 오류 코드 요약

@@ -6,7 +6,6 @@ import jakarta.validation.constraints.PastOrPresent;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
-import kr.co.seoulit.his.patientservice.patient.type.PatientStatus;
 import lombok.*;
 
 /** [DTO] API 요청/응답용 객체 - Controller @RequestBody 로 받음 */
@@ -30,9 +29,6 @@ public class PatientDto {
   @NotBlank(message = "성별은 필수입니다.")
   @Pattern(regexp = "^(01|02|03|04)$", message = "성별 코드는 01, 02, 03, 04 중 하나여야 합니다.")
   private String genderCd;
-
-  @NotNull(message = "환자상태관리코드는 필수입니다.")
-  private PatientStatus statusCd;
 
   @NotBlank(message = "임시환자 여부는 필수입니다.")
   @Pattern(regexp = "^[YN]$", message = "임시환자 여부는 Y 또는 N이어야 합니다.")
