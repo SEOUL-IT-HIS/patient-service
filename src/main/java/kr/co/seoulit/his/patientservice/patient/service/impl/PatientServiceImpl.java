@@ -2,8 +2,14 @@ package kr.co.seoulit.his.patientservice.patient.service.impl;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import kr.co.seoulit.his.patientservice.common.exception.BusinessException;
 import kr.co.seoulit.his.patientservice.common.exception.ErrorCode;
 import kr.co.seoulit.his.patientservice.patient.dto.PatientDeathUpdateRequestDto;
@@ -13,6 +19,7 @@ import kr.co.seoulit.his.patientservice.patient.dto.PatientListResponseDto;
 import kr.co.seoulit.his.patientservice.patient.dto.PatientRegisterResponseDto;
 import kr.co.seoulit.his.patientservice.patient.dto.PatientUpdateRequestDto;
 import kr.co.seoulit.his.patientservice.patient.dto.PatientValidationResponseDto;
+import kr.co.seoulit.his.patientservice.patient.dto.PatientBatchResponseDto;
 import kr.co.seoulit.his.patientservice.patient.entity.PatientEntity;
 import kr.co.seoulit.his.patientservice.patient.mapper.PatientMapper;
 import kr.co.seoulit.his.patientservice.patient.repository.PatientRepository;
@@ -68,6 +75,26 @@ public class PatientServiceImpl implements PatientService {
     return patientRepository.searchPatients(normalizedPatientName, birthDate, statusCd).stream()
         .map(PatientMapper::toListResponseDto)
         .toList();
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<PatientBatchResponseDto> getPatientsByIds(List<UUID> patientIds) {
+    List<UUID> distinctIds =
+            new ArrayList<>(new LinkedHashSet<>(patientIds));
+
+    Map<UUID, PatientEntity> patientsById =
+            patientRepository.findAllById(distinctIds).stream()
+                    .collect(
+                            Collectors.toMap(
+                                    PatientEntity::getPatientId,
+                                    Function.identity()));
+
+    return distinctIds.stream()
+            .map(patientsById::get)
+            .filter(Objects::nonNull)
+            .map(PatientMapper::toBatchResponseDto)
+            .toList();
   }
 
   @Override

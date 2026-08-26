@@ -99,6 +99,7 @@ HTTP 상태는 `200 OK`이며 본문은 다음 형식이다.
 | --- | --- | --- |
 | `POST` | `/api/patient/register` | 환자 등록 |
 | `GET` | `/api/patient/list` | 환자 검색 및 목록 조회 |
+| `POST` | `/api/patient/batch` | 환자 ID 목록 기반 배치 조회 |
 | `POST` | `/api/patient/duplicate-check` | 주민등록번호 중복 확인 |
 | `GET` | `/api/patient/{patientId}` | 환자 상세 조회 |
 | `PATCH` | `/api/patient/{patientId}` | 환자명 수정 |
@@ -211,7 +212,59 @@ GET /api/patient/list?patientName=홍&birthDate=2000-08-13&statusCd=ACTIVE
 | --- | --- | --- |
 | `400` | 날짜 또는 상태 코드 변환 실패 | `요청값이 올바르지 않습니다. 파라미터: {name}, 입력값: {value}` |
 
-## 6. 주민등록번호 중복 확인
+## 6. 환자 배치 조회
+
+### `POST /api/patient/batch`
+
+다른 서비스가 이미 보유한 여러 환자 ID의 표시 정보를 한 번에 조회한다. 환자별 상세 API 반복 호출로 발생하는 N+1 호출을 방지하기 위한 조회 API다.
+
+### Request Body
+
+| 필드 | 타입 | 필수 | 제약 조건 |
+| --- | --- | --- | --- |
+| `patientIds` | array(UUID) | Y | 1~100개, 배열 원소는 `null` 불가 |
+
+```json
+{
+  "patientIds": [
+    "550e8400-e29b-41d4-a716-446655440000",
+    "550e8400-e29b-41d4-a716-446655440001"
+  ]
+}
+```
+
+중복 ID는 최초 한 건만 조회하며, 응답은 요청 ID 순서를 유지한다. 존재하지 않는 ID는 응답에서 제외하고, 모든 ID가 존재하지 않으면 `data`는 `[]`이다.
+
+### Response — `200 OK`
+
+```json
+{
+  "code": 200,
+  "message": "SUCCESS",
+  "data": [
+    {
+      "patientId": "550e8400-e29b-41d4-a716-446655440000",
+      "patientName": "홍길동",
+      "birthDate": "2000-08-13",
+      "genderCd": "01",
+      "statusCd": "ACTIVE"
+    }
+  ]
+}
+```
+
+배치 응답은 서비스 간 환자 식별·표시에 필요한 최소 필드만 제공한다. 주민등록번호, 사망일시, 등록일시 및 수정일시는 포함하지 않는다. 호출 서비스는 응답 필드 중 필요한 값만 사용한다.
+
+### 주요 오류
+
+| HTTP | 조건 | 메시지 |
+| --- | --- | --- |
+| `400` | `patientIds` 누락 또는 빈 배열 | `환자 식별자 목록은 비어 있을 수 없습니다.` |
+| `400` | ID 100개 초과 | `환자는 한 번에 최대 100명까지 조회할 수 있습니다.` |
+| `400` | 배열 원소가 `null` | `환자 식별자는 null일 수 없습니다.` |
+| `400` | UUID 또는 JSON 형식 오류 | `요청 데이터 형식이 올바르지 않습니다.` |
+
+## 7. 주민등록번호 중복 확인
 
 ### `POST /api/patient/duplicate-check`
 
@@ -242,7 +295,7 @@ GET /api/patient/list?patientName=홍&birthDate=2000-08-13&statusCd=ACTIVE
 
 이 API의 `true`는 사용 가능하다는 뜻이 아니라 **중복됨**을 뜻한다.
 
-## 7. 환자 상세 조회
+## 8. 환자 상세 조회
 
 ### `GET /api/patient/{patientId}`
 
@@ -261,7 +314,7 @@ GET /api/patient/list?patientName=홍&birthDate=2000-08-13&statusCd=ACTIVE
 | `400` | UUID 형식 오류 | `요청값이 올바르지 않습니다. 파라미터: patientId, 입력값: {value}` |
 | `404` | 환자 미존재 | `환자 정보를 찾을 수 없습니다.` |
 
-## 8. 환자명 수정
+## 9. 환자명 수정
 
 ### `PATCH /api/patient/{patientId}`
 
@@ -290,7 +343,7 @@ GET /api/patient/list?patientName=홍&birthDate=2000-08-13&statusCd=ACTIVE
 | `400` | 이름 검증 실패 또는 UUID 형식 오류 | 검증/형식 오류 메시지 |
 | `404` | 환자 미존재 | `환자 정보를 찾을 수 없습니다.` |
 
-## 9. 사망 정보 수정
+## 10. 사망 정보 수정
 
 ### `PATCH /api/patient/{patientId}/death-status`
 
@@ -337,7 +390,7 @@ GET /api/patient/list?patientName=홍&birthDate=2000-08-13&statusCd=ACTIVE
 | `400` | 사망일시가 현재 시각보다 미래 | `사망일시는 현재 시각보다 이후일 수 없습니다.` |
 | `404` | 환자 미존재 | `환자 정보를 찾을 수 없습니다.` |
 
-## 10. 환자 비활성화
+## 11. 환자 비활성화
 
 ### `PATCH /api/patient/{patientId}/deactivate`
 
@@ -360,7 +413,7 @@ PATCH /api/patient/550e8400-e29b-41d4-a716-446655440000/deactivate
 | `400` | UUID 형식 오류 | 요청값 형식 오류 메시지 |
 | `404` | 환자 미존재 | `환자 정보를 찾을 수 없습니다.` |
 
-## 11. 활성 환자 유효성 확인
+## 12. 활성 환자 유효성 확인
 
 ### `GET /api/patient/{patientId}/validation`
 
@@ -389,7 +442,7 @@ PATCH /api/patient/550e8400-e29b-41d4-a716-446655440000/deactivate
 - `tempPatientYn`은 유효성 판정에 사용하지 않는다.
 - UUID 형식 자체가 잘못되면 `400 Bad Request`다.
 
-## 12. 오류 코드 요약
+## 13. 오류 코드 요약
 
 | HTTP | 발생 상황 | 대표 메시지 |
 | --- | --- | --- |
@@ -404,7 +457,7 @@ PATCH /api/patient/550e8400-e29b-41d4-a716-446655440000/deactivate
 | `409 Conflict` | 주민등록번호 중복 | `이미 등록된 주민등록번호입니다.` |
 | `500 Internal Server Error` | 처리되지 않은 오류 | `서버 오류가 발생했습니다.` |
 
-## 13. 다른 서비스 연동 권장 방식
+## 14. 다른 서비스 연동 권장 방식
 
 환자의 존재 여부와 활성 상태만 필요하면 상세 조회 대신 다음 API를 사용한다.
 
@@ -418,9 +471,15 @@ GET /api/patient/{patientId}/validation
 GET /api/patient/{patientId}
 ```
 
+목록 화면처럼 여러 환자의 표시 정보가 필요하면 단건 상세 API를 반복 호출하지 않고 다음 배치 API에 환자 ID 배열을 전달한다.
+
+```http
+POST /api/patient/batch
+```
+
 다른 서비스의 DB에 주민등록번호 원문을 복제하지 않는다. 상세·목록 응답의 주민등록번호도 이미 마스킹되어 있다.
 
-## 14. Swagger
+## 15. Swagger
 
 애플리케이션 실행 후 확인할 수 있다.
 

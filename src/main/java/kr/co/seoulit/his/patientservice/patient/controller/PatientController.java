@@ -42,6 +42,13 @@ public class PatientController {
     return ApiResponse.success(patientService.getPatients(patientName, birthDate, statusCd));
   }
 
+  @PostMapping("/batch")
+  public ApiResponse<List<PatientBatchResponseDto>> getPatientsByIds(
+          @Valid @RequestBody PatientBatchRequestDto dto) {
+    return ApiResponse.success(
+            patientService.getPatientsByIds(dto.patientIds()));
+  }
+
   @PostMapping("/duplicate-check")
   public ApiResponse<Boolean> checkResidentRegNoDuplicate(
       @Valid @RequestBody PatientDuplicateCheckDto dto) {

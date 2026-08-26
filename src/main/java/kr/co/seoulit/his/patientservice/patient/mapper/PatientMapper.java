@@ -7,6 +7,7 @@ import kr.co.seoulit.his.patientservice.patient.dto.PatientRegisterResponseDto;
 import kr.co.seoulit.his.patientservice.patient.entity.PatientEntity;
 import org.springframework.stereotype.Component;
 import kr.co.seoulit.his.patientservice.patient.type.PatientStatus;
+import kr.co.seoulit.his.patientservice.patient.dto.PatientBatchResponseDto;
 
 /** [Mapper] DTO ↔ Entity 변환 - toEntity: 등록 시 DTO → Entity */
 @Component
@@ -46,6 +47,15 @@ public class PatientMapper {
         patient.getDeathYn(),
         patient.getCreatedAt(),
         patient.getUpdatedAt());
+  }
+
+  public static PatientBatchResponseDto toBatchResponseDto(PatientEntity patient) {
+    return new PatientBatchResponseDto(
+            patient.getPatientId(),
+            patient.getPatientName(),
+            patient.getBirthDate(),
+            patient.getGenderCd(),
+            patient.getStatusCd());
   }
 
   public static PatientDetailResponseDto toDetailResponseDto(PatientEntity patient) {
