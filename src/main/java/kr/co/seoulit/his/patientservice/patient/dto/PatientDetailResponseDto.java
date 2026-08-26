@@ -15,5 +15,9 @@ public record PatientDetailResponseDto(
     String tempPatientYn,
     String deathYn,
     LocalDateTime deathDtm,
+    String zipCode,
+    String address,
+    String addressDetail,
+    String phoneNo,
     LocalDateTime createdAt,
     LocalDateTime updatedAt) {}

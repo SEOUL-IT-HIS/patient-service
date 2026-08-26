@@ -74,6 +74,10 @@ HTTP 상태는 `200 OK`이며 본문은 다음 형식이다.
   "tempPatientYn": "N",
   "deathYn": "N",
   "deathDtm": null,
+  "zipCode": "06236",
+  "address": "서울특별시 강남구 테헤란로 123",
+  "addressDetail": "401호",
+  "phoneNo": "01012345678",
   "createdAt": "2026-08-14T10:30:00",
   "updatedAt": "2026-08-14T10:30:00"
 }
@@ -90,6 +94,10 @@ HTTP 상태는 `200 OK`이며 본문은 다음 형식이다.
 | `tempPatientYn` | string | N | 임시환자 여부 |
 | `deathYn` | string | N | 사망 여부 |
 | `deathDtm` | string(datetime) | Y | 사망일시. 사망 정보가 없으면 `null` |
+| `zipCode` | string | Y | 우편번호. 입력되지 않은 경우 `null` |
+| `address` | string | Y | 기본주소. 입력되지 않은 경우 `null` |
+| `addressDetail` | string | Y | 상세주소. 입력되지 않은 경우 `null` |
+| `phoneNo` | string | Y | 숫자로 저장된 연락처. 입력되지 않은 경우 `null` |
 | `createdAt` | string(datetime) | N | 등록일시 |
 | `updatedAt` | string(datetime) | N | 최종 수정일시 |
 
@@ -102,7 +110,7 @@ HTTP 상태는 `200 OK`이며 본문은 다음 형식이다.
 | `POST` | `/api/patient/batch` | 환자 ID 목록 기반 배치 조회 |
 | `POST` | `/api/patient/duplicate-check` | 주민등록번호 중복 확인 |
 | `GET` | `/api/patient/{patientId}` | 환자 상세 조회 |
-| `PATCH` | `/api/patient/{patientId}` | 환자명 수정 |
+| `PATCH` | `/api/patient/{patientId}` | 환자정보 수정 |
 | `PATCH` | `/api/patient/{patientId}/death-status` | 사망 정보 수정 |
 | `PATCH` | `/api/patient/{patientId}/deactivate` | 환자 비활성화 |
 | `GET` | `/api/patient/{patientId}/validation` | 활성 환자 유효성 확인 |
@@ -120,6 +128,10 @@ HTTP 상태는 `200 OK`이며 본문은 다음 형식이다.
 | `residentRegNo` | string | Y | 하이픈 없는 숫자 13자리 |
 | `genderCd` | string | Y | `01`, `02`, `03`, `04` |
 | `tempPatientYn` | string | N | `Y`, `N`; 생략 시 `N` |
+| `zipCode` | string | N | 입력 시 숫자 5자리 |
+| `address` | string | N | 최대 300자 |
+| `addressDetail` | string | N | 최대 300자 |
+| `phoneNo` | string | N | 입력 시 하이픈 없는 숫자 9~11자리 |
 
 ```json
 {
@@ -127,11 +139,17 @@ HTTP 상태는 `200 OK`이며 본문은 다음 형식이다.
   "birthDate": "2000-08-13",
   "residentRegNo": "0008133123456",
   "genderCd": "01",
-  "tempPatientYn": "N"
+  "tempPatientYn": "N",
+  "zipCode": "06236",
+  "address": "서울특별시 강남구 테헤란로 123",
+  "addressDetail": "401호",
+  "phoneNo": "01012345678"
 }
 ```
 
 신규 환자의 환자관리상태코드는 서버에서 `ACTIVE`로 설정한다.
+
+주소·연락처 필드는 선택값이다. 생략하거나 빈 문자열을 전달하면 `null`로 저장한다.
 
 주민등록번호에서 계산한 생년월일과 `birthDate`가 일치해야 한다. 주민등록번호 일곱 번째 숫자가 `1`, `2`, `5`, `6`이면 1900년대, `3`, `4`, `7`, `8`이면 2000년대로 판정한다.
 
@@ -148,6 +166,10 @@ HTTP 상태는 `200 OK`이며 본문은 다음 형식이다.
     "genderCd": "01",
     "statusCd": "ACTIVE",
     "tempPatientYn": "N",
+    "zipCode": "06236",
+    "address": "서울특별시 강남구 테헤란로 123",
+    "addressDetail": "401호",
+    "phoneNo": "01012345678",
     "createdAt": "2026-08-14T10:30:00"
   }
 }
@@ -314,23 +336,31 @@ GET /api/patient/list?patientName=홍&birthDate=2000-08-13&statusCd=ACTIVE
 | `400` | UUID 형식 오류 | `요청값이 올바르지 않습니다. 파라미터: patientId, 입력값: {value}` |
 | `404` | 환자 미존재 | `환자 정보를 찾을 수 없습니다.` |
 
-## 9. 환자명 수정
+## 9. 환자정보 수정
 
 ### `PATCH /api/patient/{patientId}`
 
-환자명만 수정한다. 다른 환자 정보는 이 API로 변경할 수 없다.
+환자명과 현재 주소·연락처를 함께 수정한다. 주민등록번호, 생년월일, 성별, 환자 상태, 임시환자 여부 및 사망정보는 이 API로 변경할 수 없다.
 
 ### Request Body
 
 ```json
 {
-  "patientName": "홍길순"
+  "patientName": "홍길순",
+  "zipCode": "04524",
+  "address": "서울특별시 중구 세종대로 110",
+  "addressDetail": "502호",
+  "phoneNo": "01098765432"
 }
 ```
 
 | 필드 | 타입 | 필수 | 제약 조건 |
 | --- | --- | --- | --- |
 | `patientName` | string | Y | 공백 제외 2~100자; 저장 전 앞뒤 공백 제거 |
+| `zipCode` | string | N | 입력 시 숫자 5자리; 빈 문자열 또는 `null`이면 기존 값을 `null`로 변경 |
+| `address` | string | N | 최대 300자; 빈 문자열 또는 `null`이면 기존 값을 `null`로 변경 |
+| `addressDetail` | string | N | 최대 300자; 빈 문자열 또는 `null`이면 기존 값을 `null`로 변경 |
+| `phoneNo` | string | N | 입력 시 하이픈 없는 숫자 9~11자리; 빈 문자열 또는 `null`이면 기존 값을 `null`로 변경 |
 
 ### Response — `200 OK`
 
@@ -340,7 +370,7 @@ GET /api/patient/list?patientName=홍&birthDate=2000-08-13&statusCd=ACTIVE
 
 | HTTP | 조건 | 메시지 |
 | --- | --- | --- |
-| `400` | 이름 검증 실패 또는 UUID 형식 오류 | 검증/형식 오류 메시지 |
+| `400` | 환자명·주소·연락처 검증 실패 또는 UUID 형식 오류 | 검증/형식 오류 메시지 |
 | `404` | 환자 미존재 | `환자 정보를 찾을 수 없습니다.` |
 
 ## 10. 사망 정보 수정

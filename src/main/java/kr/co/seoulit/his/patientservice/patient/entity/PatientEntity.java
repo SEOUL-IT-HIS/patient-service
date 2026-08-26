@@ -56,6 +56,18 @@ public class PatientEntity {
   @Column(name = "DEATH_DTM")
   private LocalDateTime deathDtm;
 
+  @Column(name = "ZIP_CODE", length = 5)
+  private String zipCode;
+
+  @Column(name = "ADDRESS", length = 300)
+  private String address;
+
+  @Column(name = "ADDRESS_DETAIL", length = 300)
+  private String addressDetail;
+
+  @Column(name = "PHONE_NO", length = 20)
+  private String phoneNo;
+
   @Column(name = "CREATED_AT")
   private LocalDateTime createdAt;
 

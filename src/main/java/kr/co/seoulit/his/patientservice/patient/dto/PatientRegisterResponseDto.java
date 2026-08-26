@@ -17,5 +17,9 @@ public class PatientRegisterResponseDto {
   private final String genderCd;
   private final PatientStatus statusCd;
   private final String tempPatientYn;
+  private final String zipCode;
+  private final String address;
+  private final String addressDetail;
+  private final String phoneNo;
   private final LocalDateTime createdAt;
 }

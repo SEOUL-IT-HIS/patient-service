@@ -61,9 +61,10 @@ public class PatientController {
   }
 
   @PatchMapping("/{patientId}")
-  public ApiResponse<PatientDetailResponseDto> updatePatientName(
-      @PathVariable UUID patientId, @Valid @RequestBody PatientUpdateRequestDto dto) {
-    return ApiResponse.success(patientService.updatePatientName(patientId, dto));
+  public ApiResponse<PatientDetailResponseDto> updatePatientInfo(
+          @PathVariable UUID patientId,
+          @Valid @RequestBody PatientUpdateRequestDto dto) {
+    return ApiResponse.success(patientService.updatePatientInfo(patientId, dto));
   }
 
   @PatchMapping("/{patientId}/death-status")

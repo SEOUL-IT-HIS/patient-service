@@ -98,13 +98,17 @@ public class PatientServiceImpl implements PatientService {
   }
 
   @Override
-  public PatientDetailResponseDto updatePatientName(UUID patientId, PatientUpdateRequestDto dto) {
+  public PatientDetailResponseDto updatePatientInfo(UUID patientId, PatientUpdateRequestDto dto) {
     PatientEntity patient =
         patientRepository
             .findById(patientId)
             .orElseThrow(() -> new BusinessException(ErrorCode.PATIENT_NOT_FOUND));
 
     patient.setPatientName(dto.patientName().trim());
+    patient.setZipCode(normalize(dto.zipCode()));
+    patient.setAddress(normalize(dto.address()));
+    patient.setAddressDetail(normalize(dto.addressDetail()));
+    patient.setPhoneNo(normalize(dto.phoneNo()));
 
     PatientEntity updatedPatient = patientRepository.saveAndFlush(patient);
 
@@ -182,4 +186,9 @@ public class PatientServiceImpl implements PatientService {
 
     return PatientMapper.toDetailResponseDto(patient);
   }
+
+  private String normalize(String value) {
+    return value == null || value.isBlank() ? null : value.trim();
+  }
+
 }

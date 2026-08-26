@@ -33,4 +33,20 @@ public class PatientDto {
   @NotBlank(message = "임시환자 여부는 필수입니다.")
   @Pattern(regexp = "^[YN]$", message = "임시환자 여부는 Y 또는 N이어야 합니다.")
   private String tempPatientYn = "N";
+
+  @Pattern(
+          regexp = "^$|^\\d{5}$",
+          message = "우편번호는 숫자 5자리여야 합니다.")
+  private String zipCode;
+
+  @Size(max = 300, message = "주소는 300자 이하여야 합니다.")
+  private String address;
+
+  @Size(max = 300, message = "상세주소는 300자 이하여야 합니다.")
+  private String addressDetail;
+
+  @Pattern(
+          regexp = "^$|^\\d{9,11}$",
+          message = "연락처는 숫자 9~11자리여야 합니다.")
+  private String phoneNo;
 }

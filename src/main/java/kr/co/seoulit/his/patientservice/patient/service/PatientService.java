@@ -25,7 +25,8 @@ public interface PatientService {
 
   PatientDetailResponseDto getPatient(UUID patientId);
 
-  PatientDetailResponseDto updatePatientName(UUID patientId, PatientUpdateRequestDto dto);
+  PatientDetailResponseDto updatePatientInfo(
+          UUID patientId, PatientUpdateRequestDto dto);
 
   PatientDetailResponseDto updateDeathStatus(UUID patientId, PatientDeathUpdateRequestDto dto);
 
