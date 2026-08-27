@@ -1,6 +1,7 @@
 package kr.co.seoulit.his.patientservice.common.commoncode.client;
 
 import java.util.List;
+
 import kr.co.seoulit.his.patientservice.common.commoncode.dto.AdminApiResponse;
 import kr.co.seoulit.his.patientservice.common.commoncode.dto.CommonCodeGroupResponse;
 import kr.co.seoulit.his.patientservice.common.commoncode.dto.CommonCodeItemResponse;
@@ -32,7 +33,8 @@ public class AdminCommonCodeClient {
                         .get()
                         .uri("/api/commonCodeGroup/list")
                         .retrieve()
-                        .body(new ParameterizedTypeReference<>() {});
+                        .body(new ParameterizedTypeReference<>() {
+                        });
 
         if (response == null || response.data() == null) {
             throw new IllegalStateException(
@@ -57,7 +59,8 @@ public class AdminCommonCodeClient {
                                         .build()
                         )
                         .retrieve()
-                        .body(new ParameterizedTypeReference<>() {});
+                        .body(new ParameterizedTypeReference<>() {
+                        });
 
         if (response == null || response.data() == null) {
             throw new IllegalStateException(

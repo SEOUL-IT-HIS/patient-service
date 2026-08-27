@@ -31,60 +31,19 @@ public class PatientMapper {
     }
 
     public static PatientRegisterResponseDto toRegisterResponseDto(PatientEntity patient) {
-        return new PatientRegisterResponseDto(
-                patient.getPatientId(),
-                patient.getPatientName(),
-                patient.getBirthDate(),
-                patient.getGenderCd(),
-                patient.getStatusCd(),
-                patient.getTempPatientYn(),
-                patient.getZipCode(),
-                patient.getAddress(),
-                patient.getAddressDetail(),
-                patient.getPhoneNo(),
-                patient.getCreatedAt());
+        return new PatientRegisterResponseDto(patient.getPatientId(), patient.getPatientName(), patient.getBirthDate(), patient.getGenderCd(), patient.getStatusCd(), patient.getTempPatientYn(), patient.getZipCode(), patient.getAddress(), patient.getAddressDetail(), patient.getPhoneNo(), patient.getCreatedAt());
     }
 
     public static PatientListResponseDto toListResponseDto(PatientEntity patient) {
-        return new PatientListResponseDto(
-                patient.getPatientId(),
-                patient.getPatientName(),
-                maskResidentRegNo(patient.getResidentRegNo()),
-                patient.getBirthDate(),
-                patient.getGenderCd(),
-                patient.getStatusCd(),
-                patient.getTempPatientYn(),
-                patient.getDeathYn(),
-                patient.getCreatedAt(),
-                patient.getUpdatedAt());
+        return new PatientListResponseDto(patient.getPatientId(), patient.getPatientName(), maskResidentRegNo(patient.getResidentRegNo()), patient.getBirthDate(), patient.getGenderCd(), patient.getStatusCd(), patient.getTempPatientYn(), patient.getDeathYn(), patient.getCreatedAt(), patient.getUpdatedAt());
     }
 
     public static PatientBatchResponseDto toBatchResponseDto(PatientEntity patient) {
-        return new PatientBatchResponseDto(
-                patient.getPatientId(),
-                patient.getPatientName(),
-                patient.getBirthDate(),
-                patient.getGenderCd(),
-                patient.getStatusCd());
+        return new PatientBatchResponseDto(patient.getPatientId(), patient.getPatientName(), patient.getBirthDate(), patient.getGenderCd(), patient.getStatusCd());
     }
 
     public static PatientDetailResponseDto toDetailResponseDto(PatientEntity patient) {
-        return new PatientDetailResponseDto(
-                patient.getPatientId(),
-                patient.getPatientName(),
-                maskResidentRegNo(patient.getResidentRegNo()),
-                patient.getBirthDate(),
-                patient.getGenderCd(),
-                patient.getStatusCd(),
-                patient.getTempPatientYn(),
-                patient.getDeathYn(),
-                patient.getDeathDtm(),
-                patient.getZipCode(),
-                patient.getAddress(),
-                patient.getAddressDetail(),
-                patient.getPhoneNo(),
-                patient.getCreatedAt(),
-                patient.getUpdatedAt());
+        return new PatientDetailResponseDto(patient.getPatientId(), patient.getPatientName(), maskResidentRegNo(patient.getResidentRegNo()), patient.getBirthDate(), patient.getGenderCd(), patient.getStatusCd(), patient.getTempPatientYn(), patient.getDeathYn(), patient.getDeathDtm(), patient.getZipCode(), patient.getAddress(), patient.getAddressDetail(), patient.getPhoneNo(), patient.getCreatedAt(), patient.getUpdatedAt());
     }
 
     private static String maskResidentRegNo(String residentRegNo) {

@@ -8,13 +8,13 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class OpenApiConfig {
 
-  @Bean
-  public OpenAPI patientServiceOpenAPI() {
-    return new OpenAPI()
-        .info(
-            new Info()
-                .title("Patient Service API")
-                .description("HIS Patient Service REST API")
-                .version("v1"));
-  }
+    @Bean
+    public OpenAPI patientServiceOpenAPI() {
+        return new OpenAPI()
+                .info(
+                        new Info()
+                                .title("Patient Service API")
+                                .description("HIS Patient Service REST API")
+                                .version("v1"));
+    }
 }

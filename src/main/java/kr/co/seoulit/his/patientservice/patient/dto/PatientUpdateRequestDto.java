@@ -23,4 +23,5 @@ public record PatientUpdateRequestDto(
         @Pattern(
                 regexp = "^$|^\\d{9,11}$",
                 message = "연락처는 숫자 9~11자리여야 합니다.")
-        String phoneNo) {}
+        String phoneNo) {
+}
