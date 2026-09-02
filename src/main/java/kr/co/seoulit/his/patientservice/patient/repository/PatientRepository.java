@@ -33,6 +33,11 @@ public interface PatientRepository extends JpaRepository<PatientEntity, UUID> {
 
     boolean existsByResidentRegNo(String residentRegNo);
 
+    boolean existsByResidentRegNoAndPatientIdNot(
+            String residentRegNo,
+            UUID patientId
+    );
+
     boolean existsByPatientIdAndStatusCdAndDeathYn(
             UUID patientId,
             PatientStatus statusCd,

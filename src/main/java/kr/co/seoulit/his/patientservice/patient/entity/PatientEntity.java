@@ -51,6 +51,9 @@ public class PatientEntity {
     @Column(name = "TEMP_PATIENT_YN", nullable = false, length = 1, columnDefinition = "CHAR(1)")
     private String tempPatientYn = "N";
 
+    @Column(name = "TEMP_REGISTER_REASON", length = 200)
+    private String tempRegisterReason;
+
     @JdbcTypeCode(SqlTypes.CHAR)
     @Column(name = "DEATH_YN", nullable = false, length = 1, columnDefinition = "CHAR(1)")
     private String deathYn = "N";

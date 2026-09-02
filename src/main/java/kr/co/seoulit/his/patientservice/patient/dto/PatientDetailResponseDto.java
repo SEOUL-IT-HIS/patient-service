@@ -14,6 +14,7 @@ public record PatientDetailResponseDto(
         String genderCd,
         PatientStatus statusCd,
         String tempPatientYn,
+        String tempRegisterReason,
         String deathYn,
         LocalDateTime deathDtm,
         String zipCode,

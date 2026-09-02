@@ -11,6 +11,7 @@ import kr.co.seoulit.his.patientservice.patient.dto.PatientListResponseDto;
 import kr.co.seoulit.his.patientservice.patient.dto.PatientRegisterResponseDto;
 import kr.co.seoulit.his.patientservice.patient.dto.PatientUpdateRequestDto;
 import kr.co.seoulit.his.patientservice.patient.dto.PatientValidationResponseDto;
+import kr.co.seoulit.his.patientservice.patient.dto.PatientTemporaryConversionRequestDto;
 import kr.co.seoulit.his.patientservice.patient.type.PatientStatus;
 import kr.co.seoulit.his.patientservice.patient.dto.PatientBatchResponseDto;
 
@@ -28,6 +29,10 @@ public interface PatientService {
 
     PatientDetailResponseDto updatePatientInfo(
             UUID patientId, PatientUpdateRequestDto dto);
+
+    PatientDetailResponseDto convertTemporaryPatient(
+            UUID patientId,
+            PatientTemporaryConversionRequestDto dto);
 
     PatientDetailResponseDto updateDeathStatus(UUID patientId, PatientDeathUpdateRequestDto dto);
 

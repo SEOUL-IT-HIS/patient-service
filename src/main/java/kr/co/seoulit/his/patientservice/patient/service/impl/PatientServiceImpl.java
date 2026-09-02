@@ -21,6 +21,7 @@ import kr.co.seoulit.his.patientservice.patient.dto.PatientRegisterResponseDto;
 import kr.co.seoulit.his.patientservice.patient.dto.PatientUpdateRequestDto;
 import kr.co.seoulit.his.patientservice.patient.dto.PatientValidationResponseDto;
 import kr.co.seoulit.his.patientservice.patient.dto.PatientBatchResponseDto;
+import kr.co.seoulit.his.patientservice.patient.dto.PatientTemporaryConversionRequestDto;
 import kr.co.seoulit.his.patientservice.patient.entity.PatientEntity;
 import kr.co.seoulit.his.patientservice.patient.mapper.PatientMapper;
 import kr.co.seoulit.his.patientservice.patient.repository.PatientRepository;
@@ -41,6 +42,34 @@ public class PatientServiceImpl implements PatientService {
     @Override
     public PatientRegisterResponseDto createPatient(PatientDto dto) {
 
+        boolean temporaryPatient = "Y".equals(dto.getTempPatientYn());
+
+        if (temporaryPatient) {
+            prepareTemporaryPatient(dto);
+        } else {
+            validateRegularPatient(dto);
+        }
+
+        PatientEntity entity = PatientMapper.toEntity(dto);
+        PatientEntity savedPatient = patientRepository.save(entity);
+
+        return PatientMapper.toRegisterResponseDto(savedPatient);
+    }
+
+    private void validateRegularPatient(PatientDto dto) {
+
+        if (dto.getPatientName() == null || dto.getPatientName().isBlank()) {
+            throw new BusinessException(ErrorCode.PATIENT_NAME_REQUIRED);
+        }
+
+        if (dto.getBirthDate() == null) {
+            throw new BusinessException(ErrorCode.BIRTH_DATE_REQUIRED);
+        }
+
+        if (dto.getResidentRegNo() == null || dto.getResidentRegNo().isBlank()) {
+            throw new BusinessException(ErrorCode.RESIDENT_REG_NO_REQUIRED);
+        }
+
         LocalDate birthDateFromResidentRegNo =
                 ResidentRegNoUtils.extractBirthDate(dto.getResidentRegNo());
 
@@ -52,10 +81,52 @@ public class PatientServiceImpl implements PatientService {
             throw new BusinessException(ErrorCode.DUPLICATE_RESIDENT_REG_NO);
         }
 
-        PatientEntity entity = PatientMapper.toEntity(dto);
-        PatientEntity savedPatient = patientRepository.save(entity);
+        dto.setPatientName(dto.getPatientName().trim());
+        dto.setTempRegisterReason(null);
+    }
 
-        return PatientMapper.toRegisterResponseDto(savedPatient);
+    private void prepareTemporaryPatient(PatientDto dto) {
+
+        if (dto.getTempRegisterReason() == null
+                || dto.getTempRegisterReason().isBlank()) {
+            throw new BusinessException(ErrorCode.TEMP_REGISTER_REASON_REQUIRED);
+        }
+
+        dto.setTempRegisterReason(dto.getTempRegisterReason().trim());
+
+        if (dto.getPatientName() == null || dto.getPatientName().isBlank()) {
+            dto.setPatientName(generateTemporaryPatientName());
+        } else {
+            dto.setPatientName(dto.getPatientName().trim());
+        }
+
+        if (dto.getResidentRegNo() == null || dto.getResidentRegNo().isBlank()) {
+            dto.setResidentRegNo(null);
+            return;
+        }
+
+        LocalDate birthDateFromResidentRegNo =
+                ResidentRegNoUtils.extractBirthDate(dto.getResidentRegNo());
+
+        if (dto.getBirthDate() == null) {
+            dto.setBirthDate(birthDateFromResidentRegNo);
+        } else if (!birthDateFromResidentRegNo.equals(dto.getBirthDate())) {
+            throw new BusinessException(ErrorCode.BIRTH_DATE_MISMATCH);
+        }
+
+        if (patientRepository.existsByResidentRegNo(dto.getResidentRegNo())) {
+            throw new BusinessException(ErrorCode.DUPLICATE_RESIDENT_REG_NO);
+        }
+    }
+
+    private String generateTemporaryPatientName() {
+
+        String suffix = UUID.randomUUID()
+                .toString()
+                .substring(0, 8)
+                .toUpperCase();
+
+        return "무명환자-" + suffix;
     }
 
     @Override
@@ -114,6 +185,81 @@ public class PatientServiceImpl implements PatientService {
         PatientEntity updatedPatient = patientRepository.saveAndFlush(patient);
 
         return PatientMapper.toDetailResponseDto(updatedPatient);
+    }
+
+    @Override
+    public PatientDetailResponseDto convertTemporaryPatient(
+            UUID patientId,
+            PatientTemporaryConversionRequestDto dto
+    ) {
+        PatientEntity patient =
+                patientRepository
+                        .findById(patientId)
+                        .orElseThrow(
+                                () -> new BusinessException(
+                                        ErrorCode.PATIENT_NOT_FOUND
+                                )
+                        );
+
+        if (!"Y".equals(patient.getTempPatientYn())) {
+            throw new BusinessException(
+                    ErrorCode.NOT_TEMPORARY_PATIENT
+            );
+        }
+
+        String normalizedPatientName =
+                dto.patientName().trim();
+
+        if (
+                normalizedPatientName.length() < 2
+                        || normalizedPatientName.length() > 100
+        ) {
+            throw new BusinessException(
+                    ErrorCode.INVALID_INPUT,
+                    "환자명은 2자 이상 100자 이하여야 합니다."
+            );
+        }
+
+        LocalDate birthDateFromResidentRegNo =
+                ResidentRegNoUtils.extractBirthDate(
+                        dto.residentRegNo()
+                );
+
+        if (
+                !birthDateFromResidentRegNo.equals(
+                        dto.birthDate()
+                )
+        ) {
+            throw new BusinessException(
+                    ErrorCode.BIRTH_DATE_MISMATCH
+            );
+        }
+
+        boolean duplicated =
+                patientRepository
+                        .existsByResidentRegNoAndPatientIdNot(
+                                dto.residentRegNo(),
+                                patientId
+                        );
+
+        if (duplicated) {
+            throw new BusinessException(
+                    ErrorCode.DUPLICATE_RESIDENT_REG_NO
+            );
+        }
+
+        patient.setPatientName(normalizedPatientName);
+        patient.setResidentRegNo(dto.residentRegNo());
+        patient.setBirthDate(dto.birthDate());
+        patient.setGenderCd(dto.genderCd());
+        patient.setTempPatientYn("N");
+
+        PatientEntity convertedPatient =
+                patientRepository.saveAndFlush(patient);
+
+        return PatientMapper.toDetailResponseDto(
+                convertedPatient
+        );
     }
 
     @Override

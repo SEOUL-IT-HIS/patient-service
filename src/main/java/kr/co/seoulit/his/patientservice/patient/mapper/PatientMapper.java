@@ -23,6 +23,7 @@ public class PatientMapper {
         entity.setGenderCd(dto.getGenderCd());
         entity.setStatusCd(PatientStatus.ACTIVE);
         entity.setTempPatientYn(dto.getTempPatientYn());
+        entity.setTempRegisterReason(normalize(dto.getTempRegisterReason()));
         entity.setZipCode(normalize(dto.getZipCode()));
         entity.setAddress(normalize(dto.getAddress()));
         entity.setAddressDetail(normalize(dto.getAddressDetail()));
@@ -43,7 +44,7 @@ public class PatientMapper {
     }
 
     public static PatientDetailResponseDto toDetailResponseDto(PatientEntity patient) {
-        return new PatientDetailResponseDto(patient.getPatientId(), patient.getPatientName(), maskResidentRegNo(patient.getResidentRegNo()), patient.getBirthDate(), patient.getGenderCd(), patient.getStatusCd(), patient.getTempPatientYn(), patient.getDeathYn(), patient.getDeathDtm(), patient.getZipCode(), patient.getAddress(), patient.getAddressDetail(), patient.getPhoneNo(), patient.getCreatedAt(), patient.getUpdatedAt());
+        return new PatientDetailResponseDto(patient.getPatientId(), patient.getPatientName(), maskResidentRegNo(patient.getResidentRegNo()), patient.getBirthDate(), patient.getGenderCd(), patient.getStatusCd(), patient.getTempPatientYn(), patient.getTempRegisterReason(), patient.getDeathYn(), patient.getDeathDtm(), patient.getZipCode(), patient.getAddress(), patient.getAddressDetail(), patient.getPhoneNo(), patient.getCreatedAt(), patient.getUpdatedAt());
     }
 
     private static String maskResidentRegNo(String residentRegNo) {
