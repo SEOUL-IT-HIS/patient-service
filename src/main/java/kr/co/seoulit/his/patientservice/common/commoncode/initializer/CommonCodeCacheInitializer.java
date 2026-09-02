@@ -18,11 +18,13 @@ public class CommonCodeCacheInitializer implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
-        commonCodeCacheService.loadGenderCodes();
+        commonCodeCacheService.loadAllCommonCodes();
 
         log.info(
-                "성별 공통코드 로컬 캐시 적재 완료: {}",
-                commonCodeCache.getGenderCodes()
+                "공통코드 로컬 캐시 적재 완료: 그룹 수={}, 항목 수={}, 그룹={}",
+                commonCodeCache.getGroupCount(),
+                commonCodeCache.getItemCount(),
+                commonCodeCache.getGroupCodes()
         );
     }
 }

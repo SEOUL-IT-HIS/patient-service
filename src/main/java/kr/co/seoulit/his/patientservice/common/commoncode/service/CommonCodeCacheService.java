@@ -1,13 +1,13 @@
 package kr.co.seoulit.his.patientservice.common.commoncode.service;
 
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-
+import java.util.Map;
 import kr.co.seoulit.his.patientservice.common.commoncode.cache.CommonCodeCache;
 import kr.co.seoulit.his.patientservice.common.commoncode.client.AdminCommonCodeClient;
 import kr.co.seoulit.his.patientservice.common.commoncode.dto.CommonCodeGroupResponse;
 import kr.co.seoulit.his.patientservice.common.commoncode.dto.CommonCodeItemResponse;
+import kr.co.seoulit.his.patientservice.common.commoncode.model.CachedCommonCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -15,33 +15,47 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class CommonCodeCacheService {
 
-    private static final String GENDER_GROUP_CODE = "GENDER_CD";
-
     private final AdminCommonCodeClient adminCommonCodeClient;
     private final CommonCodeCache commonCodeCache;
 
-    public void loadGenderCodes() {
-        CommonCodeGroupResponse genderGroup =
-                adminCommonCodeClient.getGroups().stream()
-                        .filter(group -> GENDER_GROUP_CODE.equals(group.groupCode()))
+    /**
+     * admin-service의 모든 활성 공통코드를 조회해 로컬 캐시에 적재한다.
+     */
+    public void loadAllCommonCodes() {
+        List<CommonCodeGroupResponse> activeGroups =
+                adminCommonCodeClient
+                        .getGroups()
+                        .stream()
                         .filter(group -> "Y".equals(group.useYn()))
-                        .findFirst()
-                        .orElseThrow(
-                                () -> new IllegalStateException("GENDER_CD 공통코드 그룹을 찾을 수 없습니다."));
+                        .toList();
 
-        List<CommonCodeItemResponse> items =
-                adminCommonCodeClient.getItems(genderGroup.groupId());
+        Map<String, Map<String, CachedCommonCode>> allCodes =
+                new LinkedHashMap<>();
 
-        Set<String> genderCodes =
-                items.stream()
-                        .filter(item -> "Y".equals(item.useYn()))
-                        .map(CommonCodeItemResponse::codeValue)
-                        .collect(Collectors.toUnmodifiableSet());
+        for (CommonCodeGroupResponse group : activeGroups) {
+            List<CommonCodeItemResponse> items =
+                    adminCommonCodeClient.getItems(group.groupId());
 
-        if (genderCodes.isEmpty()) {
-            throw new IllegalStateException("사용 가능한 성별 공통코드가 없습니다.");
+            Map<String, CachedCommonCode> activeItems =
+                    new LinkedHashMap<>();
+
+            for (CommonCodeItemResponse item : items) {
+                if (!"Y".equals(item.useYn())) {
+                    continue;
+                }
+
+                CachedCommonCode cachedCode =
+                        new CachedCommonCode(
+                                item.codeValue(),
+                                item.codeName()
+                        );
+
+                activeItems.put(item.codeValue(), cachedCode);
+            }
+
+            allCodes.put(group.groupCode(), activeItems);
         }
 
-        commonCodeCache.replaceGenderCodes(genderCodes);
+        commonCodeCache.replaceAll(allCodes);
     }
 }
