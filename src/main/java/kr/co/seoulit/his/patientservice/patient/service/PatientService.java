@@ -18,7 +18,7 @@ import kr.co.seoulit.his.patientservice.patient.dto.PatientBatchResponseDto;
 public interface PatientService {
     PatientRegisterResponseDto createPatient(PatientDto patientDto);
 
-    boolean isResidentRegNoDuplicate(String residentRegNo);
+    boolean isResidentRegNoDuplicate(String residentRegNo, UUID excludePatientId);
 
     List<PatientListResponseDto> getPatients(
             String patientName, LocalDate birthDate, PatientStatus statusCd);
@@ -37,6 +37,8 @@ public interface PatientService {
     PatientDetailResponseDto updateDeathStatus(UUID patientId, PatientDeathUpdateRequestDto dto);
 
     PatientDetailResponseDto deactivatePatient(UUID patientId);
+
+    PatientDetailResponseDto activatePatient(UUID patientId);
 
     PatientValidationResponseDto validatePatient(UUID patientId);
 }

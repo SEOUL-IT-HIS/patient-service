@@ -54,7 +54,10 @@ public class PatientController {
     @PostMapping("/duplicate-check")
     public ApiResponse<Boolean> checkResidentRegNoDuplicate(
             @Valid @RequestBody PatientDuplicateCheckDto dto) {
-        return ApiResponse.success(patientService.isResidentRegNoDuplicate(dto.getResidentRegNo()));
+        return ApiResponse.success(
+                patientService.isResidentRegNoDuplicate(
+                        dto.getResidentRegNo(),
+                        dto.getExcludePatientId()));
     }
 
     @GetMapping("/{patientId}")
@@ -86,6 +89,11 @@ public class PatientController {
     @PatchMapping("/{patientId}/deactivate")
     public ApiResponse<PatientDetailResponseDto> deactivatePatient(@PathVariable UUID patientId) {
         return ApiResponse.success(patientService.deactivatePatient(patientId));
+    }
+
+    @PatchMapping("/{patientId}/activate")
+    public ApiResponse<PatientDetailResponseDto> activatePatient(@PathVariable UUID patientId) {
+        return ApiResponse.success(patientService.activatePatient(patientId));
     }
 
     @GetMapping("/{patientId}/validation")

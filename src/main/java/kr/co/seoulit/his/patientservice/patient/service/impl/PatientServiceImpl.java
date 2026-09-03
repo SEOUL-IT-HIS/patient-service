@@ -131,10 +131,14 @@ public class PatientServiceImpl implements PatientService {
 
     @Override
     @Transactional(readOnly = true)
-    public boolean isResidentRegNoDuplicate(String residentRegNo) {
+    public boolean isResidentRegNoDuplicate(String residentRegNo, UUID excludePatientId) {
         ResidentRegNoUtils.extractBirthDate(residentRegNo);
 
-        return patientRepository.existsByResidentRegNo(residentRegNo);
+        return excludePatientId == null
+                ? patientRepository.existsByResidentRegNo(residentRegNo)
+                : patientRepository.existsByResidentRegNoAndPatientIdNot(
+                        residentRegNo,
+                        excludePatientId);
     }
 
     @Override
@@ -308,6 +312,28 @@ public class PatientServiceImpl implements PatientService {
         PatientEntity deactivatedPatient = patientRepository.saveAndFlush(patient);
 
         return PatientMapper.toDetailResponseDto(deactivatedPatient);
+    }
+
+    @Override
+    public PatientDetailResponseDto activatePatient(UUID patientId) {
+        PatientEntity patient =
+                patientRepository
+                        .findById(patientId)
+                        .orElseThrow(() -> new BusinessException(ErrorCode.PATIENT_NOT_FOUND));
+
+        if ("Y".equals(patient.getDeathYn())) {
+            throw new BusinessException(ErrorCode.DECEASED_PATIENT_CANNOT_BE_ACTIVATED);
+        }
+
+        if (patient.getStatusCd() == PatientStatus.ACTIVE) {
+            return PatientMapper.toDetailResponseDto(patient);
+        }
+
+        patient.setStatusCd(PatientStatus.ACTIVE);
+
+        PatientEntity activatedPatient = patientRepository.saveAndFlush(patient);
+
+        return PatientMapper.toDetailResponseDto(activatedPatient);
     }
 
     @Override

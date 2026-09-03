@@ -39,7 +39,11 @@ public enum ErrorCode {
 
     NOT_TEMPORARY_PATIENT(
             HttpStatus.BAD_REQUEST,
-            "임시환자만 정식환자로 전환할 수 있습니다."),
+            "임시환자만 정규환자로 전환할 수 있습니다."),
+
+    DECEASED_PATIENT_CANNOT_BE_ACTIVATED(
+            HttpStatus.BAD_REQUEST,
+            "사망 상태인 환자는 활성화할 수 없습니다. 먼저 사망정보를 해제해 주세요."),
 
     PATIENT_NOT_FOUND(HttpStatus.NOT_FOUND, "환자 정보를 찾을 수 없습니다."),
 
