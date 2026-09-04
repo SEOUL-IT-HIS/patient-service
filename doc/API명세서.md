@@ -72,6 +72,7 @@ HTTP 상태는 `200 OK`이며 본문은 다음 형식이다.
   "genderCd": "01",
   "statusCd": "ACTIVE",
   "tempPatientYn": "N",
+  "tempRegisterReason": null,
   "deathYn": "N",
   "deathDtm": null,
   "zipCode": "06236",
@@ -87,11 +88,12 @@ HTTP 상태는 `200 OK`이며 본문은 다음 형식이다.
 | --- | --- | --- | --- |
 | `patientId` | string(UUID) | N | 환자 ID |
 | `patientName` | string | N | 환자명 |
-| `residentRegNo` | string | N | `YYMMDD-G******` 형식으로 마스킹된 주민등록번호 |
-| `birthDate` | string(date) | N | 생년월일 |
+| `residentRegNo` | string | Y | `YYMMDD-G******` 형식으로 마스킹된 주민등록번호. 임시환자는 `null` 가능 |
+| `birthDate` | string(date) | Y | 생년월일. 임시환자는 `null` 가능 |
 | `genderCd` | string | N | 성별 코드 |
 | `statusCd` | string | N | 환자 상태 코드 |
 | `tempPatientYn` | string | N | 임시환자 여부 |
+| `tempRegisterReason` | string | Y | 임시등록 사유. 정규환자 또는 사유가 없으면 `null` |
 | `deathYn` | string | N | 사망 여부 |
 | `deathDtm` | string(datetime) | Y | 사망일시. 사망 정보가 없으면 `null` |
 | `zipCode` | string | Y | 우편번호. 입력되지 않은 경우 `null` |
@@ -111,8 +113,10 @@ HTTP 상태는 `200 OK`이며 본문은 다음 형식이다.
 | `POST` | `/api/patient/duplicate-check` | 주민등록번호 중복 확인 |
 | `GET` | `/api/patient/{patientId}` | 환자 상세 조회 |
 | `PATCH` | `/api/patient/{patientId}` | 환자정보 수정 |
+| `PATCH` | `/api/patient/{patientId}/convert-from-temporary` | 임시환자를 정규환자로 전환 |
 | `PATCH` | `/api/patient/{patientId}/death-status` | 사망 정보 수정 |
 | `PATCH` | `/api/patient/{patientId}/deactivate` | 환자 비활성화 |
+| `PATCH` | `/api/patient/{patientId}/activate` | 환자 활성화 |
 | `GET` | `/api/patient/{patientId}/validation` | 활성 환자 유효성 확인 |
 
 ## 4. 환자 등록
@@ -123,11 +127,12 @@ HTTP 상태는 `200 OK`이며 본문은 다음 형식이다.
 
 | 필드 | 타입 | 필수 | 제약 조건 |
 | --- | --- | --- | --- |
-| `patientName` | string | Y | 공백 제외 2~100자 |
-| `birthDate` | string(date) | Y | 오늘 또는 과거 날짜 |
-| `residentRegNo` | string | Y | 하이픈 없는 숫자 13자리 |
+| `patientName` | string | 조건부 | 정규환자는 필수, 공백 제외 2~100자. 임시환자는 생략 가능하며 미입력 시 임시환자명 자동 생성 |
+| `birthDate` | string(date) | 조건부 | 정규환자는 필수, 오늘 또는 과거 날짜. 임시환자는 생략 가능 |
+| `residentRegNo` | string | 조건부 | 정규환자는 필수, 하이픈 없는 숫자 13자리. 임시환자는 생략 가능 |
 | `genderCd` | string | Y | `01`, `02`, `03`, `04` |
-| `tempPatientYn` | string | N | `Y`, `N`; 생략 시 `N` |
+| `tempPatientYn` | string | Y | `Y`, `N`; `Y`는 임시환자, `N`은 정규환자 |
+| `tempRegisterReason` | string | 조건부 | 임시환자는 필수, 공백 제외 최대 200자. 정규환자는 저장 시 `null` 처리 |
 | `zipCode` | string | N | 입력 시 숫자 5자리 |
 | `address` | string | N | 최대 300자 |
 | `addressDetail` | string | N | 최대 300자 |
@@ -152,6 +157,27 @@ HTTP 상태는 `200 OK`이며 본문은 다음 형식이다.
 주소·연락처 필드는 선택값이다. 생략하거나 빈 문자열을 전달하면 `null`로 저장한다.
 
 주민등록번호에서 계산한 생년월일과 `birthDate`가 일치해야 한다. 주민등록번호 일곱 번째 숫자가 `1`, `2`, `5`, `6`이면 1900년대, `3`, `4`, `7`, `8`이면 2000년대로 판정한다.
+
+임시환자 등록 시 주민등록번호를 전달하면 동일한 형식·생년월일 일치·중복 검증을 적용한다. 생년월일을 생략하고 유효한 주민등록번호만 전달하면 주민등록번호에서 계산한 생년월일을 저장한다.
+
+임시환자 최소정보 등록 예:
+
+```json
+{
+  "patientName": null,
+  "birthDate": null,
+  "residentRegNo": null,
+  "genderCd": "03",
+  "tempPatientYn": "Y",
+  "tempRegisterReason": "신원미상",
+  "zipCode": null,
+  "address": null,
+  "addressDetail": null,
+  "phoneNo": null
+}
+```
+
+위 요청에서 환자명은 서버가 `무명환자-{임의문자열}` 형식으로 생성한다.
 
 ### Response — `200 OK`
 
@@ -182,6 +208,8 @@ HTTP 상태는 `200 OK`이며 본문은 다음 형식이다.
 | `400` | DTO 필드 검증 실패 | 해당 필드의 검증 메시지 |
 | `400` | 주민등록번호 형식·날짜·구분 숫자 오류 | `올바른 주민등록번호 형식이 아닙니다.` |
 | `400` | 주민등록번호와 생년월일 불일치 | `주민등록번호와 생년월일이 일치하지 않습니다.` |
+| `400` | 정규환자의 환자명·생년월일·주민등록번호 누락 | 각 필수값 오류 메시지 |
+| `400` | 임시환자의 임시등록 사유 누락 | `임시환자는 임시등록 사유를 입력해야 합니다.` |
 | `400` | JSON 형식 또는 Enum 값 오류 | `요청 데이터 형식이 올바르지 않습니다.` |
 | `409` | 주민등록번호 중복 | `이미 등록된 주민등록번호입니다.` |
 
@@ -228,7 +256,7 @@ GET /api/patient/list?patientName=홍&birthDate=2000-08-13&statusCd=ACTIVE
 }
 ```
 
-조회 결과가 없으면 `data`는 `[]`이다. 목록 응답에는 `deathDtm`이 포함되지 않으므로 필요하면 상세 조회 API를 사용한다.
+조회 결과가 없으면 `data`는 `[]`이다. 임시환자는 `residentRegNo`와 `birthDate`가 `null`일 수 있다. 목록 응답에는 `deathDtm`과 `tempRegisterReason`이 포함되지 않으므로 필요하면 상세 조회 API를 사용한다.
 
 | HTTP | 조건 | 메시지 |
 | --- | --- | --- |
@@ -294,11 +322,28 @@ GET /api/patient/list?patientName=홍&birthDate=2000-08-13&statusCd=ACTIVE
 
 ```json
 {
-  "residentRegNo": "0008133123456"
+  "residentRegNo": "0008133123456",
+  "excludePatientId": null
 }
 ```
 
 `residentRegNo`는 하이픈 없는 숫자 13자리여야 하며 유효한 생년월일과 주민등록번호 구분 숫자를 포함해야 한다.
+
+| 필드 | 타입 | 필수 | 설명 |
+| --- | --- | --- | --- |
+| `residentRegNo` | string | Y | 하이픈 없는 숫자 13자리 |
+| `excludePatientId` | string(UUID) | N | 중복검사에서 제외할 환자 ID. 임시환자의 정규환자 전환 전에 자기 자신을 제외할 때 사용 |
+
+일반 신규 환자 등록 전에는 `excludePatientId`를 생략하거나 `null`로 전달한다. 정규환자 전환 전에는 현재 임시환자의 `patientId`를 전달한다.
+
+정규환자 전환용 요청 예:
+
+```json
+{
+  "residentRegNo": "0008133123456",
+  "excludePatientId": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
 
 ### Response — `200 OK`
 
@@ -316,6 +361,8 @@ GET /api/patient/list?patientName=홍&birthDate=2000-08-13&statusCd=ACTIVE
 | `false` | 동일 주민등록번호가 등록되지 않음 |
 
 이 API의 `true`는 사용 가능하다는 뜻이 아니라 **중복됨**을 뜻한다.
+
+이 API는 화면의 사전 확인을 위한 API다. 실제 환자 등록과 정규환자 전환 처리에서도 주민등록번호 중복을 다시 검증한다.
 
 ## 8. 환자 상세 조회
 
@@ -373,7 +420,54 @@ GET /api/patient/list?patientName=홍&birthDate=2000-08-13&statusCd=ACTIVE
 | `400` | 환자명·주소·연락처 검증 실패 또는 UUID 형식 오류 | 검증/형식 오류 메시지 |
 | `404` | 환자 미존재 | `환자 정보를 찾을 수 없습니다.` |
 
-## 10. 사망 정보 수정
+## 10. 임시환자 정규환자 전환
+
+### `PATCH /api/patient/{patientId}/convert-from-temporary`
+
+기존 임시환자의 환자 ID와 연계 기록을 유지하면서 확인된 신원정보를 저장하고 정규환자로 전환한다.
+
+### Request Body
+
+```json
+{
+  "patientName": "홍길동",
+  "residentRegNo": "0008133123456",
+  "birthDate": "2000-08-13",
+  "genderCd": "01"
+}
+```
+
+| 필드 | 타입 | 필수 | 제약 조건 |
+| --- | --- | --- | --- |
+| `patientName` | string | Y | 공백 제외 2~100자 |
+| `residentRegNo` | string | Y | 하이픈 없는 숫자 13자리 |
+| `birthDate` | string(date) | Y | 오늘 또는 과거 날짜, 주민등록번호에서 계산한 날짜와 일치 |
+| `genderCd` | string | Y | `01`, `02`, `03`, `04` |
+
+처리 결과:
+
+- 기존 `patientId`를 유지한다.
+- 환자명, 주민등록번호, 생년월일 및 성별을 요청값으로 변경한다.
+- `tempPatientYn`을 `Y`에서 `N`으로 변경한다.
+- 임시등록 사유는 이력 보존을 위해 삭제하지 않는다.
+- 환자관리상태, 사망정보 및 기존 연계 기록은 변경하지 않는다.
+- 현재 환자 자신을 제외하고 주민등록번호 중복 여부를 다시 검사한다.
+
+### Response — `200 OK`
+
+전환된 [환자 상세 데이터](#24-환자-상세-데이터)를 반환한다.
+
+### 주요 오류
+
+| HTTP | 조건 | 메시지 |
+| --- | --- | --- |
+| `400` | 전환 대상이 임시환자가 아님 | `임시환자만 정규환자로 전환할 수 있습니다.` |
+| `400` | 요청값 또는 주민등록번호 형식 오류 | DTO 검증/주민등록번호 오류 메시지 |
+| `400` | 주민등록번호와 생년월일 불일치 | `주민등록번호와 생년월일이 일치하지 않습니다.` |
+| `404` | 환자 미존재 | `환자 정보를 찾을 수 없습니다.` |
+| `409` | 다른 환자와 주민등록번호 중복 | `이미 등록된 주민등록번호입니다.` |
+
+## 11. 사망 정보 수정
 
 ### `PATCH /api/patient/{patientId}/death-status`
 
@@ -420,7 +514,7 @@ GET /api/patient/list?patientName=홍&birthDate=2000-08-13&statusCd=ACTIVE
 | `400` | 사망일시가 현재 시각보다 미래 | `사망일시는 현재 시각보다 이후일 수 없습니다.` |
 | `404` | 환자 미존재 | `환자 정보를 찾을 수 없습니다.` |
 
-## 11. 환자 비활성화
+## 12. 환자 비활성화
 
 ### `PATCH /api/patient/{patientId}/deactivate`
 
@@ -443,7 +537,34 @@ PATCH /api/patient/550e8400-e29b-41d4-a716-446655440000/deactivate
 | `400` | UUID 형식 오류 | 요청값 형식 오류 메시지 |
 | `404` | 환자 미존재 | `환자 정보를 찾을 수 없습니다.` |
 
-## 12. 활성 환자 유효성 확인
+## 13. 환자 활성화
+
+### `PATCH /api/patient/{patientId}/activate`
+
+요청 본문 없이 비활성 환자의 `statusCd`를 `ACTIVE`로 변경한다.
+
+```http
+PATCH /api/patient/550e8400-e29b-41d4-a716-446655440000/activate
+```
+
+- `deathYn=N`인 환자만 활성화할 수 있다.
+- 사망정보를 해제해도 자동으로 활성화되지 않으므로 필요한 경우 이 API를 별도로 호출한다.
+- 이미 `ACTIVE`인 환자에게 다시 요청하면 오류 없이 현재 상세 정보를 반환한다.
+- 이 API는 임시환자 여부와 사망정보를 변경하지 않는다.
+
+### Response — `200 OK`
+
+활성화된 [환자 상세 데이터](#24-환자-상세-데이터)를 반환한다.
+
+### 주요 오류
+
+| HTTP | 조건 | 메시지 |
+| --- | --- | --- |
+| `400` | 사망 상태인 환자 활성화 시도 | `사망 상태인 환자는 활성화할 수 없습니다. 먼저 사망정보를 해제해 주세요.` |
+| `400` | UUID 형식 오류 | 요청값 형식 오류 메시지 |
+| `404` | 환자 미존재 | `환자 정보를 찾을 수 없습니다.` |
+
+## 14. 활성 환자 유효성 확인
 
 ### `GET /api/patient/{patientId}/validation`
 
@@ -472,7 +593,7 @@ PATCH /api/patient/550e8400-e29b-41d4-a716-446655440000/deactivate
 - `tempPatientYn`은 유효성 판정에 사용하지 않는다.
 - UUID 형식 자체가 잘못되면 `400 Bad Request`다.
 
-## 13. 오류 코드 요약
+## 15. 오류 코드 요약
 
 | HTTP | 발생 상황 | 대표 메시지 |
 | --- | --- | --- |
@@ -482,12 +603,14 @@ PATCH /api/patient/550e8400-e29b-41d4-a716-446655440000/deactivate
 | `400 Bad Request` | 잘못된 주민등록번호 | `올바른 주민등록번호 형식이 아닙니다.` |
 | `400 Bad Request` | 생년월일 불일치 | `주민등록번호와 생년월일이 일치하지 않습니다.` |
 | `400 Bad Request` | 사망일시 누락/미래 시각 | 사망일시 관련 메시지 |
+| `400 Bad Request` | 사망 환자 활성화 시도 | `사망 상태인 환자는 활성화할 수 없습니다. 먼저 사망정보를 해제해 주세요.` |
+| `400 Bad Request` | 임시환자가 아닌 환자 전환 시도 | `임시환자만 정규환자로 전환할 수 있습니다.` |
 | `404 Not Found` | 상세·수정 대상 환자 미존재 | `환자 정보를 찾을 수 없습니다.` |
 | `404 Not Found` | 매핑되지 않은 URL | `요청한 경로를 찾을 수 없습니다.` |
 | `409 Conflict` | 주민등록번호 중복 | `이미 등록된 주민등록번호입니다.` |
 | `500 Internal Server Error` | 처리되지 않은 오류 | `서버 오류가 발생했습니다.` |
 
-## 14. 다른 서비스 연동 권장 방식
+## 16. 다른 서비스 연동 권장 방식
 
 환자의 존재 여부와 활성 상태만 필요하면 상세 조회 대신 다음 API를 사용한다.
 
@@ -509,7 +632,7 @@ POST /api/patient/batch
 
 다른 서비스의 DB에 주민등록번호 원문을 복제하지 않는다. 상세·목록 응답의 주민등록번호도 이미 마스킹되어 있다.
 
-## 15. Swagger
+## 17. Swagger
 
 애플리케이션 실행 후 확인할 수 있다.
 
