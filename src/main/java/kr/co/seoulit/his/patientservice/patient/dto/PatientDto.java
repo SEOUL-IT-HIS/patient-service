@@ -7,11 +7,10 @@ import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
 
-import lombok.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-/**
- * [DTO] API 요청/응답용 객체 - Controller @RequestBody 로 받음
- */
 @Getter
 @Setter
 @NoArgsConstructor

@@ -16,12 +16,10 @@ public class AdminCommonCodeClient {
     private final RestClient restClient;
 
     public AdminCommonCodeClient(
-            @Value("${admin-service.base-url}") String adminServiceBaseUrl
-    ) {
-        this.restClient =
-                RestClient.builder()
-                        .baseUrl(adminServiceBaseUrl)
-                        .build();
+            @Value("${admin-service.base-url}") String adminServiceBaseUrl) {
+        this.restClient = RestClient.builder()
+                .baseUrl(adminServiceBaseUrl)
+                .build();
     }
 
     /**
@@ -33,13 +31,10 @@ public class AdminCommonCodeClient {
                         .get()
                         .uri("/api/commonCodeGroup/list")
                         .retrieve()
-                        .body(new ParameterizedTypeReference<>() {
-                        });
+                        .body(new ParameterizedTypeReference<>() {});
 
         if (response == null || response.data() == null) {
-            throw new IllegalStateException(
-                    "admin-service 공통코드 그룹 응답이 없습니다."
-            );
+            throw new IllegalStateException("admin-service 공통코드 그룹 응답이 없습니다.");
         }
 
         return response.data();
@@ -52,20 +47,15 @@ public class AdminCommonCodeClient {
         AdminApiResponse<List<CommonCodeItemResponse>> response =
                 restClient
                         .get()
-                        .uri(uriBuilder ->
-                                uriBuilder
-                                        .path("/api/commonCodeItem/list")
-                                        .queryParam("groupId", groupId)
-                                        .build()
-                        )
+                        .uri(uriBuilder -> uriBuilder
+                                .path("/api/commonCodeItem/list")
+                                .queryParam("groupId", groupId)
+                                .build())
                         .retrieve()
-                        .body(new ParameterizedTypeReference<>() {
-                        });
+                        .body(new ParameterizedTypeReference<>() {});
 
         if (response == null || response.data() == null) {
-            throw new IllegalStateException(
-                    "admin-service 공통코드 항목 응답이 없습니다."
-            );
+            throw new IllegalStateException("admin-service 공통코드 항목 응답이 없습니다.");
         }
 
         return response.data();

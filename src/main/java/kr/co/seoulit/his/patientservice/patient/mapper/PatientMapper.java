@@ -1,19 +1,17 @@
 package kr.co.seoulit.his.patientservice.patient.mapper;
 
-import kr.co.seoulit.his.patientservice.patient.dto.PatientDto;
+import kr.co.seoulit.his.patientservice.patient.dto.PatientBatchResponseDto;
 import kr.co.seoulit.his.patientservice.patient.dto.PatientDetailResponseDto;
+import kr.co.seoulit.his.patientservice.patient.dto.PatientDto;
 import kr.co.seoulit.his.patientservice.patient.dto.PatientListResponseDto;
 import kr.co.seoulit.his.patientservice.patient.dto.PatientRegisterResponseDto;
 import kr.co.seoulit.his.patientservice.patient.entity.PatientEntity;
-import org.springframework.stereotype.Component;
 import kr.co.seoulit.his.patientservice.patient.type.PatientStatus;
-import kr.co.seoulit.his.patientservice.patient.dto.PatientBatchResponseDto;
 
-/**
- * [Mapper] DTO ↔ Entity 변환 - toEntity: 등록 시 DTO → Entity
- */
-@Component
-public class PatientMapper {
+public final class PatientMapper {
+
+    private PatientMapper() {
+    }
 
     public static PatientEntity toEntity(PatientDto dto) {
         PatientEntity entity = new PatientEntity();
@@ -32,19 +30,61 @@ public class PatientMapper {
     }
 
     public static PatientRegisterResponseDto toRegisterResponseDto(PatientEntity patient) {
-        return new PatientRegisterResponseDto(patient.getPatientId(), patient.getPatientName(), patient.getBirthDate(), patient.getGenderCd(), patient.getStatusCd(), patient.getTempPatientYn(), patient.getZipCode(), patient.getAddress(), patient.getAddressDetail(), patient.getPhoneNo(), patient.getCreatedAt());
+        return new PatientRegisterResponseDto(
+                patient.getPatientId(),
+                patient.getPatientName(),
+                patient.getBirthDate(),
+                patient.getGenderCd(),
+                patient.getStatusCd(),
+                patient.getTempPatientYn(),
+                patient.getZipCode(),
+                patient.getAddress(),
+                patient.getAddressDetail(),
+                patient.getPhoneNo(),
+                patient.getCreatedAt());
     }
 
     public static PatientListResponseDto toListResponseDto(PatientEntity patient) {
-        return new PatientListResponseDto(patient.getPatientId(), patient.getPatientName(), maskResidentRegNo(patient.getResidentRegNo()), patient.getBirthDate(), patient.getGenderCd(), patient.getStatusCd(), patient.getTempPatientYn(), patient.getDeathYn(), patient.getCreatedAt(), patient.getUpdatedAt());
+        return new PatientListResponseDto(
+                patient.getPatientId(),
+                patient.getPatientName(),
+                maskResidentRegNo(patient.getResidentRegNo()),
+                patient.getBirthDate(),
+                patient.getGenderCd(),
+                patient.getStatusCd(),
+                patient.getTempPatientYn(),
+                patient.getDeathYn(),
+                patient.getCreatedAt(),
+                patient.getUpdatedAt());
     }
 
     public static PatientBatchResponseDto toBatchResponseDto(PatientEntity patient) {
-        return new PatientBatchResponseDto(patient.getPatientId(), patient.getPatientName(), patient.getBirthDate(), patient.getGenderCd(), patient.getStatusCd());
+        return new PatientBatchResponseDto(
+                patient.getPatientId(),
+                patient.getPatientName(),
+                patient.getBirthDate(),
+                patient.getGenderCd(),
+                patient.getStatusCd());
     }
 
     public static PatientDetailResponseDto toDetailResponseDto(PatientEntity patient) {
-        return new PatientDetailResponseDto(patient.getPatientId(), patient.getPatientName(), maskResidentRegNo(patient.getResidentRegNo()), patient.getBirthDate(), patient.getGenderCd(), patient.getStatusCd(), patient.getTempPatientYn(), patient.getTempRegisterReason(), patient.getDeathYn(), patient.getDeathDtm(), patient.getZipCode(), patient.getAddress(), patient.getAddressDetail(), patient.getPhoneNo(), patient.getCreatedAt(), patient.getUpdatedAt());
+        return new PatientDetailResponseDto(
+                patient.getPatientId(),
+                patient.getPatientName(),
+                maskResidentRegNo(patient.getResidentRegNo()),
+                patient.getBirthDate(),
+                patient.getGenderCd(),
+                patient.getStatusCd(),
+                patient.getTempPatientYn(),
+                patient.getTempRegisterReason(),
+                patient.getDeathYn(),
+                patient.getDeathDtm(),
+                patient.getZipCode(),
+                patient.getAddress(),
+                patient.getAddressDetail(),
+                patient.getPhoneNo(),
+                patient.getCreatedAt(),
+                patient.getUpdatedAt());
     }
 
     private static String maskResidentRegNo(String residentRegNo) {
@@ -63,5 +103,4 @@ public class PatientMapper {
     private static String normalize(String value) {
         return value == null || value.isBlank() ? null : value.trim();
     }
-
 }

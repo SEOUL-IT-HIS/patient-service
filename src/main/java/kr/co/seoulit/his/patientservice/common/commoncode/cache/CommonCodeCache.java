@@ -4,28 +4,24 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+
 import kr.co.seoulit.his.patientservice.common.commoncode.model.CachedCommonCode;
 import org.springframework.stereotype.Component;
 
 @Component
 public class CommonCodeCache {
 
-    private volatile Map<String, Map<String, CachedCommonCode>> codesByGroup =
-            Map.of();
+    private volatile Map<String, Map<String, CachedCommonCode>> codesByGroup = Map.of();
 
     /**
      * 전체 공통코드 캐시를 새로운 값으로 교체한다.
      */
-    public void replaceAll(
-            Map<String, Map<String, CachedCommonCode>> newCodesByGroup
-    ) {
-        Map<String, Map<String, CachedCommonCode>> copiedGroups =
-                new HashMap<>();
+    public void replaceAll(Map<String, Map<String, CachedCommonCode>> newCodesByGroup) {
+        Map<String, Map<String, CachedCommonCode>> copiedGroups = new HashMap<>();
 
         newCodesByGroup.forEach(
                 (groupCode, items) ->
-                        copiedGroups.put(groupCode, Map.copyOf(items))
-        );
+                        copiedGroups.put(groupCode, Map.copyOf(items)));
 
         this.codesByGroup = Map.copyOf(copiedGroups);
     }
@@ -46,18 +42,14 @@ public class CommonCodeCache {
     /**
      * 특정 그룹의 특정 코드 정보를 조회한다.
      */
-    public Optional<CachedCommonCode> find(
-            String groupCode,
-            String codeValue
-    ) {
+    public Optional<CachedCommonCode> find(String groupCode, String codeValue) {
         if (groupCode == null || codeValue == null) {
             return Optional.empty();
         }
 
-        CachedCommonCode code =
-                codesByGroup
-                        .getOrDefault(groupCode, Map.of())
-                        .get(codeValue);
+        CachedCommonCode code = codesByGroup
+                .getOrDefault(groupCode, Map.of())
+                .get(codeValue);
 
         return Optional.ofNullable(code);
     }
@@ -91,8 +83,7 @@ public class CommonCodeCache {
      * 캐시에 저장된 전체 공통코드 항목 개수를 반환한다.
      */
     public int getItemCount() {
-        return codesByGroup
-                .values()
+        return codesByGroup.values()
                 .stream()
                 .mapToInt(Map::size)
                 .sum();

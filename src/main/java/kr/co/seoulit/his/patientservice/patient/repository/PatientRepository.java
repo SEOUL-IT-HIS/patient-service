@@ -12,8 +12,6 @@ import org.springframework.data.repository.query.Param;
 
 public interface PatientRepository extends JpaRepository<PatientEntity, UUID> {
 
-    List<PatientEntity> findByPatientNameOrderByPatientIdAsc(String patientName);
-
     @Query(
             """
                     SELECT p
@@ -35,12 +33,10 @@ public interface PatientRepository extends JpaRepository<PatientEntity, UUID> {
 
     boolean existsByResidentRegNoAndPatientIdNot(
             String residentRegNo,
-            UUID patientId
-    );
+            UUID patientId);
 
     boolean existsByPatientIdAndStatusCdAndDeathYn(
             UUID patientId,
             PatientStatus statusCd,
-            String deathYn
-    );
+            String deathYn);
 }

@@ -175,10 +175,7 @@ public class PatientServiceImpl implements PatientService {
 
     @Override
     public PatientDetailResponseDto updatePatientInfo(UUID patientId, PatientUpdateRequestDto dto) {
-        PatientEntity patient =
-                patientRepository
-                        .findById(patientId)
-                        .orElseThrow(() -> new BusinessException(ErrorCode.PATIENT_NOT_FOUND));
+        PatientEntity patient = getPatientOrThrow(patientId);
 
         patient.setPatientName(dto.patientName().trim());
         patient.setZipCode(normalize(dto.zipCode()));
@@ -196,14 +193,7 @@ public class PatientServiceImpl implements PatientService {
             UUID patientId,
             PatientTemporaryConversionRequestDto dto
     ) {
-        PatientEntity patient =
-                patientRepository
-                        .findById(patientId)
-                        .orElseThrow(
-                                () -> new BusinessException(
-                                        ErrorCode.PATIENT_NOT_FOUND
-                                )
-                        );
+        PatientEntity patient = getPatientOrThrow(patientId);
 
         if (!"Y".equals(patient.getTempPatientYn())) {
             throw new BusinessException(
@@ -211,45 +201,26 @@ public class PatientServiceImpl implements PatientService {
             );
         }
 
-        String normalizedPatientName =
-                dto.patientName().trim();
+        String normalizedPatientName = dto.patientName().trim();
 
-        if (
-                normalizedPatientName.length() < 2
-                        || normalizedPatientName.length() > 100
-        ) {
+        if (normalizedPatientName.length() < 2 || normalizedPatientName.length() > 100) {
             throw new BusinessException(
                     ErrorCode.INVALID_INPUT,
-                    "환자명은 2자 이상 100자 이하여야 합니다."
-            );
+                    "환자명은 2자 이상 100자 이하여야 합니다.");
         }
 
         LocalDate birthDateFromResidentRegNo =
-                ResidentRegNoUtils.extractBirthDate(
-                        dto.residentRegNo()
-                );
+                ResidentRegNoUtils.extractBirthDate(dto.residentRegNo());
 
-        if (
-                !birthDateFromResidentRegNo.equals(
-                        dto.birthDate()
-                )
-        ) {
-            throw new BusinessException(
-                    ErrorCode.BIRTH_DATE_MISMATCH
-            );
+        if (!birthDateFromResidentRegNo.equals(dto.birthDate())) {
+            throw new BusinessException(ErrorCode.BIRTH_DATE_MISMATCH);
         }
 
-        boolean duplicated =
-                patientRepository
-                        .existsByResidentRegNoAndPatientIdNot(
-                                dto.residentRegNo(),
-                                patientId
-                        );
+        boolean duplicated = patientRepository.existsByResidentRegNoAndPatientIdNot(
+                dto.residentRegNo(), patientId);
 
         if (duplicated) {
-            throw new BusinessException(
-                    ErrorCode.DUPLICATE_RESIDENT_REG_NO
-            );
+            throw new BusinessException(ErrorCode.DUPLICATE_RESIDENT_REG_NO);
         }
 
         patient.setPatientName(normalizedPatientName);
@@ -258,21 +229,15 @@ public class PatientServiceImpl implements PatientService {
         patient.setGenderCd(dto.genderCd());
         patient.setTempPatientYn("N");
 
-        PatientEntity convertedPatient =
-                patientRepository.saveAndFlush(patient);
+        PatientEntity convertedPatient = patientRepository.saveAndFlush(patient);
 
-        return PatientMapper.toDetailResponseDto(
-                convertedPatient
-        );
+        return PatientMapper.toDetailResponseDto(convertedPatient);
     }
 
     @Override
     public PatientDetailResponseDto updateDeathStatus(
             UUID patientId, PatientDeathUpdateRequestDto dto) {
-        PatientEntity patient =
-                patientRepository
-                        .findById(patientId)
-                        .orElseThrow(() -> new BusinessException(ErrorCode.PATIENT_NOT_FOUND));
+        PatientEntity patient = getPatientOrThrow(patientId);
 
         if ("Y".equals(dto.deathYn())) {
             if (dto.deathDtm() == null) {
@@ -298,10 +263,7 @@ public class PatientServiceImpl implements PatientService {
 
     @Override
     public PatientDetailResponseDto deactivatePatient(UUID patientId) {
-        PatientEntity patient =
-                patientRepository
-                        .findById(patientId)
-                        .orElseThrow(() -> new BusinessException(ErrorCode.PATIENT_NOT_FOUND));
+        PatientEntity patient = getPatientOrThrow(patientId);
 
         if (patient.getStatusCd() == PatientStatus.INACTIVE) {
             return PatientMapper.toDetailResponseDto(patient);
@@ -316,10 +278,7 @@ public class PatientServiceImpl implements PatientService {
 
     @Override
     public PatientDetailResponseDto activatePatient(UUID patientId) {
-        PatientEntity patient =
-                patientRepository
-                        .findById(patientId)
-                        .orElseThrow(() -> new BusinessException(ErrorCode.PATIENT_NOT_FOUND));
+        PatientEntity patient = getPatientOrThrow(patientId);
 
         if ("Y".equals(patient.getDeathYn())) {
             throw new BusinessException(ErrorCode.DECEASED_PATIENT_CANNOT_BE_ACTIVATED);
@@ -352,16 +311,17 @@ public class PatientServiceImpl implements PatientService {
     @Override
     @Transactional(readOnly = true)
     public PatientDetailResponseDto getPatient(UUID patientId) {
-        PatientEntity patient =
-                patientRepository
-                        .findById(patientId)
-                        .orElseThrow(() -> new BusinessException(ErrorCode.PATIENT_NOT_FOUND));
+        PatientEntity patient = getPatientOrThrow(patientId);
 
         return PatientMapper.toDetailResponseDto(patient);
     }
 
-    private String normalize(String value) {
-        return value == null || value.isBlank() ? null : value.trim();
+    private PatientEntity getPatientOrThrow(UUID patientId) {
+        return patientRepository.findById(patientId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PATIENT_NOT_FOUND));
     }
 
+    private static String normalize(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
 }

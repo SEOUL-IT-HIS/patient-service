@@ -7,7 +7,17 @@ import java.util.List;
 import java.util.UUID;
 
 import kr.co.seoulit.his.patientservice.common.response.ApiResponse;
-import kr.co.seoulit.his.patientservice.patient.dto.*;
+import kr.co.seoulit.his.patientservice.patient.dto.PatientBatchRequestDto;
+import kr.co.seoulit.his.patientservice.patient.dto.PatientBatchResponseDto;
+import kr.co.seoulit.his.patientservice.patient.dto.PatientDeathUpdateRequestDto;
+import kr.co.seoulit.his.patientservice.patient.dto.PatientDetailResponseDto;
+import kr.co.seoulit.his.patientservice.patient.dto.PatientDto;
+import kr.co.seoulit.his.patientservice.patient.dto.PatientDuplicateCheckDto;
+import kr.co.seoulit.his.patientservice.patient.dto.PatientListResponseDto;
+import kr.co.seoulit.his.patientservice.patient.dto.PatientRegisterResponseDto;
+import kr.co.seoulit.his.patientservice.patient.dto.PatientTemporaryConversionRequestDto;
+import kr.co.seoulit.his.patientservice.patient.dto.PatientUpdateRequestDto;
+import kr.co.seoulit.his.patientservice.patient.dto.PatientValidationResponseDto;
 import kr.co.seoulit.his.patientservice.patient.service.PatientService;
 import kr.co.seoulit.his.patientservice.patient.type.PatientStatus;
 import lombok.RequiredArgsConstructor;
@@ -31,7 +41,8 @@ public class PatientController {
     private final PatientService patientService;
 
     @PostMapping("/register")
-    public ApiResponse<PatientRegisterResponseDto> createPatient(@Valid @RequestBody PatientDto dto) {
+    public ApiResponse<PatientRegisterResponseDto> createPatient(
+            @Valid @RequestBody PatientDto dto) {
         return ApiResponse.success(patientService.createPatient(dto));
     }
 

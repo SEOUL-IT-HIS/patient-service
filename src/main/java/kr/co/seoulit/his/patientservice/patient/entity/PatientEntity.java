@@ -1,13 +1,23 @@
 package kr.co.seoulit.his.patientservice.patient.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 import kr.co.seoulit.his.patientservice.patient.type.PatientStatus;
-import lombok.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.type.SqlTypes;
@@ -48,14 +58,22 @@ public class PatientEntity {
     private PatientStatus statusCd = PatientStatus.ACTIVE;
 
     @JdbcTypeCode(SqlTypes.CHAR)
-    @Column(name = "TEMP_PATIENT_YN", nullable = false, length = 1, columnDefinition = "CHAR(1)")
+    @Column(
+            name = "TEMP_PATIENT_YN",
+            nullable = false,
+            length = 1,
+            columnDefinition = "CHAR(1)")
     private String tempPatientYn = "N";
 
     @Column(name = "TEMP_REGISTER_REASON", length = 200)
     private String tempRegisterReason;
 
     @JdbcTypeCode(SqlTypes.CHAR)
-    @Column(name = "DEATH_YN", nullable = false, length = 1, columnDefinition = "CHAR(1)")
+    @Column(
+            name = "DEATH_YN",
+            nullable = false,
+            length = 1,
+            columnDefinition = "CHAR(1)")
     private String deathYn = "N";
 
     @Column(name = "DEATH_DTM")
