@@ -45,9 +45,25 @@ public enum ErrorCode {
             HttpStatus.BAD_REQUEST,
             "사망 상태인 환자는 활성화할 수 없습니다. 먼저 사망정보를 해제해 주세요."),
 
-    PATIENT_NOT_FOUND(HttpStatus.NOT_FOUND, "환자 정보를 찾을 수 없습니다."),
+    PATIENT_NOT_FOUND(
+            HttpStatus.NOT_FOUND,
+            "환자 정보를 찾을 수 없습니다."),
 
-    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 오류가 발생했습니다.");
+    SAFETY_INFO_NOT_FOUND(
+            HttpStatus.NOT_FOUND,
+            "환자 안전정보를 찾을 수 없습니다."),
+
+    SAFETY_INFO_INACTIVE(
+            HttpStatus.CONFLICT,
+            "비활성화된 환자 안전정보는 수정할 수 없습니다."),
+
+    SAFETY_NOTE_TOO_LONG(
+            HttpStatus.BAD_REQUEST,
+            "환자 안전정보 내용은 2000바이트 이하여야 합니다."),
+
+INTERNAL_SERVER_ERROR(
+            HttpStatus.INTERNAL_SERVER_ERROR,
+            "서버 오류가 발생했습니다.");
 
     private final HttpStatus httpStatus;
     private final String message;
