@@ -29,7 +29,7 @@ public class AdminCommonCodeClient {
         AdminApiResponse<List<CommonCodeGroupResponse>> response =
                 restClient
                         .get()
-                        .uri("/api/commonCodeGroup/list")
+                        .uri("/api/admin/commonCodeGroup/list")
                         .retrieve()
                         .body(new ParameterizedTypeReference<>() {});
 
@@ -48,7 +48,7 @@ public class AdminCommonCodeClient {
                 restClient
                         .get()
                         .uri(uriBuilder -> uriBuilder
-                                .path("/api/commonCodeItem/list")
+                                .path("/api/admin/commonCodeItem/list")
                                 .queryParam("groupId", groupId)
                                 .build())
                         .retrieve()

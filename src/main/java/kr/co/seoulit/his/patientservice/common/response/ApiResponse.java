@@ -1,5 +1,6 @@
 package kr.co.seoulit.his.patientservice.common.response;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -10,8 +11,11 @@ import lombok.Getter;
 @AllArgsConstructor
 public class ApiResponse<T> {
 
+    @Schema(description = "HTTP 상태 코드", example = "200")
     private final int code;
+    @Schema(description = "성공 시 SUCCESS, 실패 시 오류 메시지", example = "SUCCESS")
     private final String message;
+    @Schema(description = "API별 응답 데이터. 오류 시 null")
     private final T data;
 
     public static <T> ApiResponse<T> ok(T data) {

@@ -118,6 +118,12 @@ HTTP 상태는 `200 OK`이며 본문은 다음 형식이다.
 | `PATCH` | `/api/patient/{patientId}/deactivate` | 환자 비활성화 |
 | `PATCH` | `/api/patient/{patientId}/activate` | 환자 활성화 |
 | `GET` | `/api/patient/{patientId}/validation` | 활성 환자 유효성 확인 |
+| `GET` | `/api/patient/procedure/count` | 상태별 환자 수 조회 |
+| `POST` | `/api/patient/{patientId}/safety-info` | 환자 안전정보 등록 |
+| `GET` | `/api/patient/{patientId}/safety-info` | 환자 안전정보 목록 조회 |
+| `GET` | `/api/patient/{patientId}/safety-info/{safetyInfoId}` | 환자 안전정보 상세 조회 |
+| `PATCH` | `/api/patient/{patientId}/safety-info/{safetyInfoId}` | 환자 안전정보 수정 |
+| `PATCH` | `/api/patient/{patientId}/safety-info/{safetyInfoId}/deactivate` | 환자 안전정보 비활성화 |
 
 ## 4. 환자 등록
 
@@ -638,3 +644,145 @@ POST /api/patient/batch
 
 - Swagger UI: `http://{host}:8080/swagger-ui/index.html`
 - OpenAPI JSON: `http://{host}:8080/v3/api-docs`
+
+환자 기본정보, 환자 안전정보, 환자 통계 태그로 전체 17개 API를 제공한다.
+각 API의 요청·응답 DTO, 파라미터, 성공 및 오류 응답을 확인할 수 있다.
+Swagger의 Try it out은 실제 API를 호출하므로 등록·수정 요청은 연결된 DB에 반영된다.
+
+## 18. 환자 안전정보 API (CB2-40)
+
+### 18.1 공통 계약
+
+기본 경로: `/api/patient/{patientId}/safety-info`
+
+| 파라미터 | 위치 | 형식 | 설명 |
+| --- | --- | --- | --- |
+| `patientId` | path | UUID | 필수. 존재하는 환자의 식별자 |
+| `safetyInfoId` | path | UUID | 상세·수정·비활성화 시 필수. 해당 환자 소유의 안전정보 식별자 |
+
+- 요청 본문이 있는 API는 `Content-Type: application/json`을 사용한다.
+- 모든 성공 응답의 HTTP 상태는 `200 OK`이며 `code`, `message`, `data` 형식을 사용한다. 등록도 `201`이 아닌 `200`이다.
+- 환자의 존재 여부를 확인한다. 환자의 활성·사망 상태에 따른 별도 제한은 현재 없다.
+- 다른 환자의 안전정보 ID로 요청하면 안전정보 미존재와 동일하게 `404`를 반환한다.
+- 내용은 공백일 수 없고 **UTF-8 기준 2,000바이트 이하**여야 한다. 2,000글자 제한이 아니다. 앞뒤 공백을 자동 제거하지 않는다.
+- 비활성화는 논리 삭제이며 재활성화 API는 없다.
+
+### 18.2 안전정보 응답 데이터
+
+| 필드 | 형식 | 설명 |
+| --- | --- | --- |
+| `safetyInfoId` | UUID | 생성된 안전정보 식별자 |
+| `patientId` | UUID | 소유 환자 식별자 |
+| `safetyNote` | string | 안전정보 내용 |
+| `activeYn` | string | `Y`: 활성, `N`: 비활성 |
+| `createdAt` | date-time | 생성시각. 시간대 오프셋 없는 서버 현지 시각 |
+| `updatedAt` | date-time | 마지막 수정시각. 최초 등록 시 생성시각과 동일 |
+
+단건 응답 예시:
+
+```json
+{
+  "code": 200,
+  "message": "SUCCESS",
+  "data": {
+    "safetyInfoId": "660e8400-e29b-41d4-a716-446655440001",
+    "patientId": "550e8400-e29b-41d4-a716-446655440000",
+    "safetyNote": "라텍스 알레르기 있음",
+    "activeYn": "Y",
+    "createdAt": "2026-09-09T10:00:00",
+    "updatedAt": "2026-09-09T10:00:00"
+  }
+}
+```
+
+### 18.3 등록 — `POST /api/patient/{patientId}/safety-info`
+
+Request Body:
+
+```json
+{ "safetyNote": "라텍스 알레르기 있음" }
+```
+
+`safetyNote`는 필수 문자열이다. 서버가 UUID와 생성·수정시각을 생성하고 `activeYn=Y`로 저장한다.
+응답은 18.2의 단건 형식이다. 주요 오류는 `400`(본문·내용 검증 실패), `404`(환자 미존재)다.
+
+### 18.4 목록 조회 — `GET /api/patient/{patientId}/safety-info`
+
+| Query Parameter | 형식 | 필수 | 기본값 | 설명 |
+| --- | --- | --- | --- | --- |
+| `includeInactive` | boolean | N | `false` | `true`이면 비활성 정보도 포함 |
+
+요청 본문은 없다. `createdAt` 내림차순, 동률이면 `safetyInfoId` 내림차순으로 반환한다. 페이지네이션은 없다.
+
+```http
+GET /api/patient/550e8400-e29b-41d4-a716-446655440000/safety-info?includeInactive=true
+```
+
+응답의 `data`는 18.2 안전정보 객체의 배열이다. 환자는 존재하지만 결과가 없으면 다음과 같다.
+
+```json
+{ "code": 200, "message": "SUCCESS", "data": [] }
+```
+
+주요 오류는 `400`(UUID·쿼리 형식 오류), `404`(환자 미존재)다.
+
+### 18.5 상세 조회 — `GET /api/patient/{patientId}/safety-info/{safetyInfoId}`
+
+요청 본문은 없다. 활성·비활성 여부에 관계없이 해당 환자 소유의 한 건을 조회한다.
+응답은 18.2의 단건 형식이다. 주요 오류는 `400`(UUID 형식 오류), `404`(환자 또는 해당 환자 안전정보 미존재)다.
+
+### 18.6 수정 — `PATCH /api/patient/{patientId}/safety-info/{safetyInfoId}`
+
+Request Body:
+
+```json
+{ "safetyNote": "라텍스 알레르기 있음. 라텍스 프리 장갑 사용" }
+```
+
+`safetyNote`는 필수이며 생략·null·공백 또는 UTF-8 2,000바이트 초과를 허용하지 않는다.
+활성 정보의 내용만 변경하며 실제 갱신 시 `updatedAt`도 갱신한다. 식별자·소유 환자·생성시각·활성 여부는 변경하지 않는다.
+응답은 변경된 18.2의 단건 형식이다.
+주요 오류는 `400`(입력값 오류), `404`(대상 미존재), `409`(이미 비활성인 정보 수정)다.
+
+### 18.7 비활성화 — `PATCH /api/patient/{patientId}/safety-info/{safetyInfoId}/deactivate`
+
+요청 본문은 없다. `activeYn=N`으로 변경하고 `updatedAt`을 갱신한다. 내용과 레코드는 유지한다.
+이미 비활성이면 수정시각을 변경하지 않고 기존 데이터를 `200 OK`로 반환한다.
+응답은 18.2의 단건 형식이며 `activeYn`이 `N`이다.
+주요 오류는 `400`(UUID 형식 오류), `404`(대상 미존재)다.
+
+### 18.8 오류 응답
+
+| HTTP | 발생 상황 | 메시지 |
+| --- | --- | --- |
+| `400` | safetyNote 누락·null·공백 | `환자 안전정보 내용은 필수입니다.` |
+| `400` | UTF-8 2,000바이트 초과 | `환자 안전정보 내용은 2000바이트 이하여야 합니다.` |
+| `400` | UUID·boolean 변환 실패 | `요청값이 올바르지 않습니다. 파라미터: ..., 입력값: ...` |
+| `400` | 본문 누락·잘못된 JSON | `요청 데이터 형식이 올바르지 않습니다.` |
+| `404` | 환자 미존재 | `환자 정보를 찾을 수 없습니다.` |
+| `404` | 안전정보 미존재 또는 다른 환자 소유 | `환자 안전정보를 찾을 수 없습니다.` |
+| `409` | 비활성 안전정보 수정 | `비활성화된 환자 안전정보는 수정할 수 없습니다.` |
+| `500` | 처리되지 않은 서버 오류 | `서버 오류가 발생했습니다.` |
+
+```json
+{
+  "code": 409,
+  "message": "비활성화된 환자 안전정보는 수정할 수 없습니다.",
+  "data": null
+}
+```
+
+응답 본문에 `SAFETY_INFO_INACTIVE` 같은 내부 ErrorCode 이름은 포함하지 않는다.
+
+## 19. 상태별 환자 수 조회
+
+### `GET /api/patient/procedure/count`
+
+쿼리 `statusCd`는 `ACTIVE` 또는 `INACTIVE`이며 생략 시 `ACTIVE`다. Oracle 프로시저를 호출한다.
+이 API의 성공 응답은 공통 래퍼를 사용하지 않는다.
+
+```json
+{ "statusCd": "ACTIVE", "count": 12 }
+```
+
+잘못된 상태값은 `400`, 처리되지 않은 오류는 `500`이며 오류 응답은 공통 `code/message/data` 형식이다.
