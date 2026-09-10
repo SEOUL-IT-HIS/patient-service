@@ -16,6 +16,8 @@ import kr.co.seoulit.his.patientservice.patient.type.PatientStatus;
 import kr.co.seoulit.his.patientservice.patient.dto.PatientBatchResponseDto;
 
 public interface PatientService {
+    kr.co.seoulit.his.patientservice.patient.dto.PatientPageResponseDto getPatientPage(
+            String patientName, LocalDate birthDate, PatientStatus statusCd, int page);
     PatientRegisterResponseDto createPatient(PatientDto patientDto);
 
     boolean isResidentRegNoDuplicate(String residentRegNo, UUID excludePatientId);

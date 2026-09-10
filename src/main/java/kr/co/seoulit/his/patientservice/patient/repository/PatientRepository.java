@@ -11,6 +11,22 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface PatientRepository extends JpaRepository<PatientEntity, UUID> {
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT p FROM PatientEntity p WHERE p.patientId = :patientId")
+    java.util.Optional<PatientEntity> lockPatient(@Param("patientId") UUID patientId);
+
+    @Query("""
+            SELECT p FROM PatientEntity p
+            WHERE (:patientName IS NULL OR p.patientName LIKE CONCAT('%', CONCAT(:patientName, '%')))
+              AND (:birthDate IS NULL OR p.birthDate = :birthDate)
+              AND (:statusCd IS NULL OR p.statusCd = :statusCd)
+            ORDER BY p.createdAt DESC, p.patientId DESC
+            """)
+    org.springframework.data.domain.Page<PatientEntity> searchPatientPage(
+            @Param("patientName") String patientName,
+            @Param("birthDate") LocalDate birthDate,
+            @Param("statusCd") PatientStatus statusCd,
+            org.springframework.data.domain.Pageable pageable);
 
     @Query(
             """

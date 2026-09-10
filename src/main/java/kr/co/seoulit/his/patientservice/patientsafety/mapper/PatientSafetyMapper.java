@@ -15,6 +15,7 @@ public class PatientSafetyMapper {
                 entity.getPatientId(),
                 entity.getSafetyNote(),
                 entity.getActiveYn(),
+                entity.getPinnedYn(),
                 entity.getCreatedAt(),
                 entity.getUpdatedAt()
         );

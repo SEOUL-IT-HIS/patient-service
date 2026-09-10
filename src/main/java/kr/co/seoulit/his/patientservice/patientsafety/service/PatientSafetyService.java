@@ -8,6 +8,7 @@ import kr.co.seoulit.his.patientservice.patientsafety.dto.PatientSafetyResponseD
 import kr.co.seoulit.his.patientservice.patientsafety.dto.PatientSafetyUpdateRequestDto;
 
 public interface PatientSafetyService {
+    PatientSafetyResponseDto setPinned(UUID patientId, UUID safetyInfoId, boolean pinned);
 
     PatientSafetyResponseDto createSafetyInfo(
             UUID patientId,

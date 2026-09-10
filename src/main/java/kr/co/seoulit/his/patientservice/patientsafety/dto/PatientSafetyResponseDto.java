@@ -15,6 +15,8 @@ public record PatientSafetyResponseDto(
         String safetyNote,
         @Schema(description = "안전정보 활성 여부 (Y/N)", example = "Y")
         String activeYn,
+        @Schema(description = "상단 고정 여부 (Y/N)", example = "N")
+        String pinnedYn,
         @Schema(description = "생성시각 (시간대 없는 서버 현지 시각)", example = "2026-09-09T10:00:00")
         LocalDateTime createdAt,
         @Schema(description = "최종 수정시각 (시간대 없는 서버 현지 시각)", example = "2026-09-09T10:00:00")

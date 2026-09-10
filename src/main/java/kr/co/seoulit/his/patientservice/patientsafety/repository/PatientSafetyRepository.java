@@ -10,6 +10,17 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface PatientSafetyRepository
         extends JpaRepository<PatientSafetyEntity, UUID> {
 
+    long countByPatientIdAndActiveYnAndPinnedYn(UUID patientId, String activeYn, String pinnedYn);
+
+    @org.springframework.data.jpa.repository.Query("""
+            SELECT s FROM PatientSafetyEntity s
+            WHERE s.patientId = :patientId AND (:includeInactive = true OR s.activeYn = 'Y')
+            ORDER BY s.activeYn DESC, s.pinnedYn DESC, s.createdAt DESC, s.safetyInfoId DESC
+            """)
+    List<PatientSafetyEntity> findOrdered(
+            @org.springframework.data.repository.query.Param("patientId") UUID patientId,
+            @org.springframework.data.repository.query.Param("includeInactive") boolean includeInactive);
+
     List<PatientSafetyEntity>
     findByPatientIdAndActiveYnOrderByCreatedAtDescSafetyInfoIdDesc(
             UUID patientId,

@@ -61,6 +61,14 @@ public class PatientSafetyEntity {
             columnDefinition = "CHAR(1 BYTE)")
     private String activeYn = "Y";
 
+    @JdbcTypeCode(SqlTypes.CHAR)
+    @Column(name = "PINNED_YN", nullable = false, length = 1, columnDefinition = "CHAR(1 BYTE)")
+    private String pinnedYn = "N";
+
+    public void setPinned(boolean pinned) {
+        this.pinnedYn = pinned ? "Y" : "N";
+    }
+
 @Column(
             name = "CREATED_AT",
             nullable = false,
@@ -86,6 +94,7 @@ public class PatientSafetyEntity {
 
     public void deactivate() {
         this.activeYn = "N";
+        this.pinnedYn = "N";
     }
 
     public boolean isActive() {

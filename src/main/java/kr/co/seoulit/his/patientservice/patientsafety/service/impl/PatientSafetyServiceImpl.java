@@ -55,17 +55,7 @@ public class PatientSafetyServiceImpl implements PatientSafetyService {
 
         validatePatientExists(patientId);
 
-        List<PatientSafetyEntity> entities;
-
-        if (includeInactive) {
-            entities = patientSafetyRepository
-                    .findByPatientIdOrderByCreatedAtDescSafetyInfoIdDesc(
-                            patientId);
-        } else {
-            entities = patientSafetyRepository
-                    .findByPatientIdAndActiveYnOrderByCreatedAtDescSafetyInfoIdDesc(
-                            patientId, "Y");
-        }
+        List<PatientSafetyEntity> entities = patientSafetyRepository.findOrdered(patientId, includeInactive);
 
         return entities.stream()
                 .map(patientSafetyMapper::toResponseDto)
@@ -90,6 +80,8 @@ public class PatientSafetyServiceImpl implements PatientSafetyService {
             UUID safetyInfoId,
             PatientSafetyUpdateRequestDto request) {
 
+        lockPatient(patientId);
+
         PatientSafetyEntity entity =
                 findSafetyInfo(patientId, safetyInfoId);
 
@@ -113,6 +105,8 @@ public class PatientSafetyServiceImpl implements PatientSafetyService {
             UUID patientId,
             UUID safetyInfoId) {
 
+        lockPatient(patientId);
+
         PatientSafetyEntity entity =
                 findSafetyInfo(patientId, safetyInfoId);
 
@@ -129,6 +123,27 @@ public class PatientSafetyServiceImpl implements PatientSafetyService {
         if (!patientRepository.existsById(patientId)) {
             throw new BusinessException(ErrorCode.PATIENT_NOT_FOUND);
         }
+    }
+
+    private void lockPatient(UUID patientId) {
+        patientRepository.lockPatient(patientId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PATIENT_NOT_FOUND));
+    }
+
+    @Override
+    @Transactional
+    public PatientSafetyResponseDto setPinned(UUID patientId, UUID safetyInfoId, boolean pinned) {
+        // Serialize pin/unpin/deactivation for one patient, including concurrent requests.
+        lockPatient(patientId);
+        PatientSafetyEntity entity = findSafetyInfo(patientId, safetyInfoId);
+        if (!entity.isActive()) throw new BusinessException(ErrorCode.SAFETY_INFO_INACTIVE);
+        if (pinned && !"Y".equals(entity.getPinnedYn()) &&
+                patientSafetyRepository.countByPatientIdAndActiveYnAndPinnedYn(patientId, "Y", "Y") >= 2) {
+            throw new BusinessException(ErrorCode.SAFETY_PIN_LIMIT);
+        }
+        entity.setPinned(pinned);
+        patientSafetyRepository.flush();
+        return patientSafetyMapper.toResponseDto(entity);
     }
 
     private PatientSafetyEntity findSafetyInfo(

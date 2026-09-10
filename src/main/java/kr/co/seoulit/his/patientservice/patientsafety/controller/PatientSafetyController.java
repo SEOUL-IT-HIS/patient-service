@@ -38,6 +38,15 @@ public class PatientSafetyController {
 
     private final PatientSafetyService patientSafetyService;
 
+    @Operation(summary = "안전정보 상단 고정 및 해제", description = "활성 정보만 고정할 수 있으며 환자당 최대 2건입니다. 한도 초과 또는 비활성 정보는 409, 환자/정보 미존재는 404, 입력 오류는 400입니다. 같은 상태 재요청은 성공합니다.")
+    @PatchMapping("/{safetyInfoId}/pin")
+    public ApiResponse<PatientSafetyResponseDto> setPinned(
+            @PathVariable("patientId") UUID patientId,
+            @PathVariable("safetyInfoId") UUID safetyInfoId,
+            @Valid @RequestBody kr.co.seoulit.his.patientservice.patientsafety.dto.PatientSafetyPinRequestDto request) {
+        return ApiResponse.success(patientSafetyService.setPinned(patientId, safetyInfoId, request.pinned()));
+    }
+
     @Operation(summary = "환자 안전정보 등록", description = "공백이 아닌 UTF-8 기준 2000바이트 이하의 내용을 등록합니다. 최초 상태는 Y입니다. 환자 존재 여부만 검사합니다.")
     @ApiResponses({
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공", useReturnTypeSchema = true),
@@ -58,7 +67,7 @@ public class PatientSafetyController {
         return ApiResponse.success(
                 patientSafetyService.createSafetyInfo(patientId, request));
     }
-    @Operation(summary = "환자 안전정보 목록 조회", description = "기본적으로 활성 정보만 조회하며 includeInactive=true이면 비활성 정보도 포함합니다. 생성시각 내림차순, 동률이면 안전정보 ID 내림차순입니다.")
+    @Operation(summary = "환자 안전정보 목록 조회", description = "기본적으로 활성 정보만 조회하며 includeInactive=true이면 비활성 정보도 포함합니다. 활성 먼저, 고정 먼저, 생성시각 내림차순, 동률이면 안전정보 ID 내림차순입니다. 전체 배열을 반환하며 화면에서는 2건씩 펼칩니다.")
     @ApiResponses({
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공", useReturnTypeSchema = true),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "요청값 형식 또는 입력값 검증 실패",

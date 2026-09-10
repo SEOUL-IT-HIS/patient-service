@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 @Getter
 @RequiredArgsConstructor
 public enum ErrorCode {
+    SAFETY_PIN_LIMIT(HttpStatus.CONFLICT, "안전정보는 최대 2건까지 고정할 수 있습니다. 기존 고정을 해제해 주세요."),
     INVALID_INPUT(HttpStatus.BAD_REQUEST, "입력값이 올바르지 않습니다."),
 
     PATIENT_NAME_REQUIRED(

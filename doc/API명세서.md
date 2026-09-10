@@ -109,6 +109,7 @@ HTTP 상태는 `200 OK`이며 본문은 다음 형식이다.
 | --- | --- | --- |
 | `POST` | `/api/patient/register` | 환자 등록 |
 | `GET` | `/api/patient/list` | 환자 검색 및 목록 조회 |
+| `GET` | `/api/patient/list/page` | 환자 관리 화면용 15명 단위 페이지 조회 |
 | `POST` | `/api/patient/batch` | 환자 ID 목록 기반 배치 조회 |
 | `POST` | `/api/patient/duplicate-check` | 주민등록번호 중복 확인 |
 | `GET` | `/api/patient/{patientId}` | 환자 상세 조회 |
@@ -124,6 +125,7 @@ HTTP 상태는 `200 OK`이며 본문은 다음 형식이다.
 | `GET` | `/api/patient/{patientId}/safety-info/{safetyInfoId}` | 환자 안전정보 상세 조회 |
 | `PATCH` | `/api/patient/{patientId}/safety-info/{safetyInfoId}` | 환자 안전정보 수정 |
 | `PATCH` | `/api/patient/{patientId}/safety-info/{safetyInfoId}/deactivate` | 환자 안전정보 비활성화 |
+| `PATCH` | `/api/patient/{patientId}/safety-info/{safetyInfoId}/pin` | 환자 안전정보 상단 고정 및 해제 |
 
 ## 4. 환자 등록
 
@@ -267,6 +269,37 @@ GET /api/patient/list?patientName=홍&birthDate=2000-08-13&statusCd=ACTIVE
 | HTTP | 조건 | 메시지 |
 | --- | --- | --- |
 | `400` | 날짜 또는 상태 코드 변환 실패 | `요청값이 올바르지 않습니다. 파라미터: {name}, 입력값: {value}` |
+
+### 환자 목록 페이지 조회 — `GET /api/patient/list/page`
+
+환자 관리 화면은 이 API를 사용한다. 기존 `/api/patient/list`의 전체 목록 응답은 유지한다.
+
+| Query | 필수 | 설명 |
+| --- | --- | --- |
+| `patientName` | N | 환자명 부분 검색 |
+| `birthDate` | N | 생년월일 `yyyy-MM-dd` |
+| `statusCd` | N | `ACTIVE` 또는 `INACTIVE` |
+| `page` | N | 1부터 시작, 기본 1. 1 미만 또는 잘못된 형식은 400 |
+
+서버에서 페이지당 15명으로 제한하며 등록일 내림차순, 동률이면 환자 ID 내림차순으로 조회한다.
+검색 조건 변경·초기화 시 프런트는 1페이지를 요청한다. 페이지 이동은 마지막으로 검색한 조건을 유지한다.
+범위를 초과하면 마지막 페이지를 반환한다. 결과가 없으면 `page=1`, `totalPages=0`이다.
+
+```json
+{
+  "code": 200,
+  "message": "SUCCESS",
+  "data": {
+    "items": [],
+    "page": 1,
+    "size": 15,
+    "totalElements": 0,
+    "totalPages": 0
+  }
+}
+```
+
+`items`의 각 항목은 기존 환자 목록 응답과 동일하다. 정상 응답은 200, 입력 형식 오류는 400, 서버 오류는 500이다.
 
 ## 6. 환자 배치 조회
 
@@ -645,7 +678,7 @@ POST /api/patient/batch
 - Swagger UI: `http://{host}:8080/swagger-ui/index.html`
 - OpenAPI JSON: `http://{host}:8080/v3/api-docs`
 
-환자 기본정보, 환자 안전정보, 환자 통계 태그로 전체 17개 API를 제공한다.
+환자 기본정보, 환자 안전정보, 환자 통계 태그로 전체 19개 API를 제공한다.
 각 API의 요청·응답 DTO, 파라미터, 성공 및 오류 응답을 확인할 수 있다.
 Swagger의 Try it out은 실제 API를 호출하므로 등록·수정 요청은 연결된 DB에 반영된다.
 
@@ -675,6 +708,7 @@ Swagger의 Try it out은 실제 API를 호출하므로 등록·수정 요청은 
 | `patientId` | UUID | 소유 환자 식별자 |
 | `safetyNote` | string | 안전정보 내용 |
 | `activeYn` | string | `Y`: 활성, `N`: 비활성 |
+| `pinnedYn` | string | `Y`: 상단 고정, `N`: 고정 안 됨. 환자당 활성 정보 최대 2건 고정 |
 | `createdAt` | date-time | 생성시각. 시간대 오프셋 없는 서버 현지 시각 |
 | `updatedAt` | date-time | 마지막 수정시각. 최초 등록 시 생성시각과 동일 |
 
@@ -689,6 +723,7 @@ Swagger의 Try it out은 실제 API를 호출하므로 등록·수정 요청은 
     "patientId": "550e8400-e29b-41d4-a716-446655440000",
     "safetyNote": "라텍스 알레르기 있음",
     "activeYn": "Y",
+    "pinnedYn": "N",
     "createdAt": "2026-09-09T10:00:00",
     "updatedAt": "2026-09-09T10:00:00"
   }
@@ -712,7 +747,7 @@ Request Body:
 | --- | --- | --- | --- | --- |
 | `includeInactive` | boolean | N | `false` | `true`이면 비활성 정보도 포함 |
 
-요청 본문은 없다. `createdAt` 내림차순, 동률이면 `safetyInfoId` 내림차순으로 반환한다. 페이지네이션은 없다.
+요청 본문은 없다. 활성 정보 먼저, 각 그룹에서 고정 정보 먼저, 그다음 `createdAt` 내림차순, 동률이면 `safetyInfoId` 내림차순으로 반환한다. API는 전체 배열을 반환하며 프런트는 최초 2건을 표시하고 ‘더 보기’로 2건씩 펼친다. 표시 범위와 남은 건수를 표시하며, 환자 또는 비활성 포함 필터를 바꾸면 처음 2건으로 돌아간다.
 
 ```http
 GET /api/patient/550e8400-e29b-41d4-a716-446655440000/safety-info?includeInactive=true
@@ -746,7 +781,7 @@ Request Body:
 
 ### 18.7 비활성화 — `PATCH /api/patient/{patientId}/safety-info/{safetyInfoId}/deactivate`
 
-요청 본문은 없다. `activeYn=N`으로 변경하고 `updatedAt`을 갱신한다. 내용과 레코드는 유지한다.
+요청 본문은 없다. `activeYn=N`, `pinnedYn=N`으로 변경하고 `updatedAt`을 갱신한다. 내용과 레코드는 유지한다.
 이미 비활성이면 수정시각을 변경하지 않고 기존 데이터를 `200 OK`로 반환한다.
 응답은 18.2의 단건 형식이며 `activeYn`이 `N`이다.
 주요 오류는 `400`(UUID 형식 오류), `404`(대상 미존재)다.
@@ -773,6 +808,23 @@ Request Body:
 ```
 
 응답 본문에 `SAFETY_INFO_INACTIVE` 같은 내부 ErrorCode 이름은 포함하지 않는다.
+
+### 18.9 상단 고정·해제 — `PATCH /api/patient/{patientId}/safety-info/{safetyInfoId}/pin`
+
+```json
+{ "pinned": true }
+```
+
+`pinned`는 필수 boolean이며 `false`로 해제한다. 정상 응답은 200과 18.2의 단건 데이터다.
+활성 정보만 고정할 수 있고 환자당 최대 2건이다. 같은 상태의 반복 요청은 성공한다.
+3번째 고정은 409와 `안전정보는 최대 2건까지 고정할 수 있습니다. 기존 고정을 해제해 주세요.`를 반환한다.
+비활성 정보는 409, 다른 환자 소유 또는 미존재 정보는 404, 본문 누락·잘못된 형식은 400이다.
+고정·해제·내용 수정·비활성화는 환자 행 잠금을 공유하여 동시 요청 시 고정 수 초과나 상태 유실을 방지한다.
+고정 정보끼리는 등록일 최신순이며 내용 수정으로 등록일 순서는 바뀌지 않는다.
+
+Oracle 스키마에는 `PATIENT_SAFETY_INFO.PINNED_YN` 컬럼(CHAR(1 BYTE), DEFAULT 'N', NOT NULL)이 필요하다.
+2026-09-10 현재 연결된 PATIENT 스키마에 컬럼과 고정 여부·활성 상태 제약조건을 적용했다.
+기존 레코드는 `pinnedYn=N`으로 유지된다. 다른 환경 배포 시 동일한 스키마가 준비됐는지 확인한다.
 
 ## 19. 상태별 환자 수 조회
 

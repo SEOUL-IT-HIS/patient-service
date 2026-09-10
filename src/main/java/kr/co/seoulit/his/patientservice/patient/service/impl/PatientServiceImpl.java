@@ -40,6 +40,23 @@ public class PatientServiceImpl implements PatientService {
     private final PatientRepository patientRepository;
 
     @Override
+    @Transactional(readOnly = true)
+    public kr.co.seoulit.his.patientservice.patient.dto.PatientPageResponseDto getPatientPage(
+            String patientName, LocalDate birthDate, PatientStatus statusCd, int page) {
+        if (page < 1) throw new BusinessException(ErrorCode.INVALID_INPUT);
+        String name = patientName == null || patientName.isBlank() ? null : patientName.trim();
+        var result = patientRepository.searchPatientPage(name, birthDate, statusCd,
+                org.springframework.data.domain.PageRequest.of(page - 1, 15));
+        if (page > Math.max(1, result.getTotalPages())) {
+            result = patientRepository.searchPatientPage(name, birthDate, statusCd,
+                    org.springframework.data.domain.PageRequest.of(Math.max(0, result.getTotalPages() - 1), 15));
+        }
+        return new kr.co.seoulit.his.patientservice.patient.dto.PatientPageResponseDto(
+                result.getContent().stream().map(PatientMapper::toListResponseDto).toList(),
+                result.getNumber() + 1, 15, result.getTotalElements(), result.getTotalPages());
+    }
+
+    @Override
     public PatientRegisterResponseDto createPatient(PatientDto dto) {
 
         boolean temporaryPatient = "Y".equals(dto.getTempPatientYn());
