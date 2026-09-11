@@ -30,7 +30,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "환자 안전정보", description = "환자 안전정보 등록·조회·수정·비활성화")
+@Tag(name = "환자 안전정보", description = "환자 안전정보 등록·조회·수정·비활성화·상단 고정 및 해제")
 @RestController
 @RequestMapping("/api/patient/{patientId}/safety-info")
 @RequiredArgsConstructor
@@ -39,6 +39,21 @@ public class PatientSafetyController {
     private final PatientSafetyService patientSafetyService;
 
     @Operation(summary = "안전정보 상단 고정 및 해제", description = "활성 정보만 고정할 수 있으며 환자당 최대 2건입니다. 한도 초과 또는 비활성 정보는 409, 환자/정보 미존재는 404, 입력 오류는 400입니다. 같은 상태 재요청은 성공합니다.")
+    @ApiResponses({
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공", useReturnTypeSchema = true),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "요청값 형식 또는 입력값 검증 실패",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = kr.co.seoulit.his.patientservice.common.response.ApiResponse.class),
+                        examples = @ExampleObject(value = "{\"code\":400,\"message\":\"요청 데이터 형식이 올바르지 않습니다.\",\"data\":null}"))),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "환자 또는 해당 환자의 대상 정보를 찾을 수 없습니다.",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = kr.co.seoulit.his.patientservice.common.response.ApiResponse.class),
+                        examples = @ExampleObject(value = "{\"code\":404,\"message\":\"환자 정보를 찾을 수 없습니다.\",\"data\":null}"))),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "고정 한도(2건) 초과 또는 비활성 안전정보의 고정 상태 변경",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = kr.co.seoulit.his.patientservice.common.response.ApiResponse.class),
+                        examples = @ExampleObject(value = "{\"code\":409,\"message\":\"안전정보는 최대 2건까지 고정할 수 있습니다. 기존 고정을 해제해 주세요.\",\"data\":null}"))),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 오류가 발생했습니다.",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = kr.co.seoulit.his.patientservice.common.response.ApiResponse.class),
+                        examples = @ExampleObject(value = "{\"code\":500,\"message\":\"서버 오류가 발생했습니다.\",\"data\":null}")))
+    })
     @PatchMapping("/{safetyInfoId}/pin")
     public ApiResponse<PatientSafetyResponseDto> setPinned(
             @PathVariable("patientId") UUID patientId,
@@ -150,7 +165,7 @@ public class PatientSafetyController {
         );
     }
 
-    @Operation(summary = "환자 안전정보 비활성화", description = "삭제하지 않고 ACTIVE_YN을 N으로 변경합니다. 이미 비활성이면 수정시각을 변경하지 않고 성공 응답을 반환합니다.")
+    @Operation(summary = "환자 안전정보 비활성화", description = "삭제하지 않고 ACTIVE_YN과 PINNED_YN을 N으로 변경합니다. 이미 비활성이면 수정시각을 변경하지 않고 성공 응답을 반환합니다.")
     @ApiResponses({
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공", useReturnTypeSchema = true),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "요청값 형식 또는 입력값 검증 실패",

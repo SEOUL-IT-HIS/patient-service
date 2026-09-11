@@ -13,9 +13,9 @@ public record PatientSafetyResponseDto(
         UUID patientId,
         @Schema(description = "안전정보 내용. 공백 불가, UTF-8 기준 최대 2000바이트 (글자 수 제한이 아님)", example = "라텍스 알레르기 있음")
         String safetyNote,
-        @Schema(description = "안전정보 활성 여부 (Y/N)", example = "Y")
+        @Schema(description = "안전정보 활성 여부 (Y/N)", example = "Y", allowableValues = {"Y", "N"})
         String activeYn,
-        @Schema(description = "상단 고정 여부 (Y/N)", example = "N")
+        @Schema(description = "상단 고정 여부. 최초 N, 비활성화 시 N. 환자당 활성 정보 최대 2건 고정", example = "N", allowableValues = {"Y", "N"})
         String pinnedYn,
         @Schema(description = "생성시각 (시간대 없는 서버 현지 시각)", example = "2026-09-09T10:00:00")
         LocalDateTime createdAt,
