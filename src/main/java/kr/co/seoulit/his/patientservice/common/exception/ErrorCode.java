@@ -50,6 +50,26 @@ public enum ErrorCode {
             HttpStatus.NOT_FOUND,
             "환자 정보를 찾을 수 없습니다."),
 
+    PATIENT_CONTACT_NOT_FOUND(
+            HttpStatus.NOT_FOUND,
+            "환자 연락처 정보를 찾을 수 없습니다."
+    ),
+
+    PATIENT_CONTACT_INACTIVE(
+            HttpStatus.CONFLICT,
+            "비활성화된 환자 연락처 정보는 수정하거나 대표로 지정할 수 없습니다."
+    ),
+
+    PATIENT_CONTACT_LAST_ACTIVE(
+            HttpStatus.CONFLICT,
+            "마지막 활성 환자 연락처 정보는 비활성화할 수 없습니다."
+    ),
+
+    PATIENT_CONTACT_PRIMARY_DEACTIVATION(
+            HttpStatus.CONFLICT,
+            "대표 환자 연락처 정보는 다른 활성 연락처를 대표로 지정한 뒤 비활성화할 수 있습니다."
+    ),
+
     SAFETY_INFO_NOT_FOUND(
             HttpStatus.NOT_FOUND,
             "환자 안전정보를 찾을 수 없습니다."),

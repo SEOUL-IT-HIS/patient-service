@@ -126,6 +126,11 @@ HTTP 상태는 `200 OK`이며 본문은 다음 형식이다.
 | `PATCH` | `/api/patient/{patientId}/safety-info/{safetyInfoId}` | 환자 안전정보 수정 |
 | `PATCH` | `/api/patient/{patientId}/safety-info/{safetyInfoId}/deactivate` | 환자 안전정보 비활성화 |
 | `PATCH` | `/api/patient/{patientId}/safety-info/{safetyInfoId}/pin` | 환자 안전정보 상단 고정 및 해제 |
+| `GET` | `/api/patient/{patientId}/contacts` | 환자 주소·연락처 목록 조회 |
+| `POST` | `/api/patient/{patientId}/contacts` | 환자 주소·연락처 등록 |
+| `PATCH` | `/api/patient/{patientId}/contacts/{contactId}` | 환자 주소·연락처 수정 |
+| `PATCH` | `/api/patient/{patientId}/contacts/{contactId}/primary` | 대표 주소·연락처 지정 |
+| `PATCH` | `/api/patient/{patientId}/contacts/{contactId}/deactivate` | 환자 주소·연락처 비활성화 |
 
 ## 4. 환자 등록
 
@@ -842,3 +847,67 @@ Oracle 스키마에는 `PATIENT_SAFETY_INFO.PINNED_YN` 컬럼(CHAR(1 BYTE), DEFA
 ```
 
 잘못된 상태값은 `400`, 처리되지 않은 오류는 `500`이며 오류 응답은 공통 `code/message/data` 형식이다.
+
+## 20. 환자 주소·연락처 API (CB2-67, CB2-45)
+
+기본 경로: `/api/patient/{patientId}/contacts`
+
+기존 `PATIENT.ZIP_CODE`, `ADDRESS`, `ADDRESS_DETAIL`, `PHONE_NO`는 기존 서비스 호환을 위해 유지한다. 기존 값 11건은 `PATIENT_CONTACT`에도 초기 복사되어 목록에서 함께 조회된다. 이 API에서 새로 등록·수정·대표 지정·비활성화하는 데이터는 `PATIENT_CONTACT`만 변경하며 기존 `PATIENT` 주소·연락처 컬럼을 변경하지 않는다.
+
+### 20.1 응답 데이터
+
+| 필드 | 타입 | 설명 |
+| --- | --- | --- |
+| `contactId` | UUID | 연락처 식별자 |
+| `patientId` | UUID | 소유 환자 식별자 |
+| `zipCode` | string/null | 우편번호 |
+| `address` | string/null | 기본주소 |
+| `addressDetail` | string/null | 상세주소 |
+| `phoneNo` | string/null | 하이픈 없는 연락처 |
+| `primaryYn` | `Y`/`N` | 활성 대표 주소·연락처 여부 |
+| `activeYn` | `Y`/`N` | 활성 여부 |
+| `createdAt`, `updatedAt` | date-time | 생성·수정 시각 |
+
+### 20.2 목록 조회 — `GET /api/patient/{patientId}/contacts`
+
+| Query Parameter | 타입 | 기본값 | 설명 |
+| --- | --- | --- | --- |
+| `includeInactive` | boolean | `false` | `true`이면 비활성 항목도 포함 |
+
+활성 대표, 활성 일반, 비활성 순으로 반환하며 같은 그룹은 생성시각 내림차순이다. 환자가 없으면 `404`다.
+
+### 20.3 등록 — `POST /api/patient/{patientId}/contacts`
+
+```json
+{
+  "zipCode": "06236",
+  "address": "서울특별시 강남구 테헤란로 123",
+  "addressDetail": "401호",
+  "phoneNo": "01012345678"
+}
+```
+
+우편번호는 숫자 5자리, 주소·상세주소는 최대 300자, 연락처는 하이픈 없는 숫자 9~11자리다. 네 값이 모두 비어 있으면 `400`이다. 활성 대표가 없는 환자의 첫 등록 항목은 자동 대표가 된다.
+
+### 20.4 수정 — `PATCH /api/patient/{patientId}/contacts/{contactId}`
+
+등록과 같은 요청 본문을 사용한다. 비활성 연락처 수정은 `409`, 다른 환자 소유 또는 미존재 연락처는 `404`다.
+
+### 20.5 대표 지정 — `PATCH /api/patient/{patientId}/contacts/{contactId}/primary`
+
+요청 본문은 없다. 선택한 활성 연락처를 대표로 지정하고, 기존 활성 대표은 일반 항목으로 변경한다. 같은 대표를 반복 지정해도 `200`이다. 비활성 항목 지정은 `409`다.
+
+### 20.6 비활성화 — `PATCH /api/patient/{patientId}/contacts/{contactId}/deactivate`
+
+요청 본문은 없다. 일반 활성 연락처를 `activeYn=N`, `primaryYn=N`으로 변경한다. 이미 비활성이면 변경 없이 `200`을 반환한다. 대표 연락처는 먼저 다른 활성 연락처를 대표로 지정해야 하며, 대표 또는 마지막 활성 연락처를 비활성화하면 `409`다.
+
+### 20.7 오류 응답
+
+| HTTP | 상황 | 메시지 |
+| --- | --- | --- |
+| `400` | UUID, query, 요청 본문 또는 필드 형식 오류 | 공통 입력값 오류 메시지 |
+| `404` | 환자 미존재 | `환자 정보를 찾을 수 없습니다.` |
+| `404` | 연락처 미존재 또는 다른 환자 소유 | `환자 연락처 정보를 찾을 수 없습니다.` |
+| `409` | 비활성 연락처 수정·대표 지정 | `비활성화된 환자 연락처 정보는 수정하거나 대표로 지정할 수 없습니다.` |
+| `409` | 대표 연락처 비활성화 | `대표 환자 연락처 정보는 다른 활성 연락처를 대표로 지정한 뒤 비활성화할 수 있습니다.` |
+| `409` | 마지막 활성 연락처 비활성화 | `마지막 활성 환자 연락처 정보는 비활성화할 수 없습니다.` |
