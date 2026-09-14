@@ -82,7 +82,7 @@ public enum ErrorCode {
             HttpStatus.BAD_REQUEST,
             "환자 안전정보 내용은 2000바이트 이하여야 합니다."),
 
-INTERNAL_SERVER_ERROR(
+    INTERNAL_SERVER_ERROR(
             HttpStatus.INTERNAL_SERVER_ERROR,
             "서버 오류가 발생했습니다.");
 
