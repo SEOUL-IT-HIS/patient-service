@@ -41,7 +41,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @Validated
-@Tag(name = "환자 기본정보", description = "환자 등록·검색·수정·상태 및 주소·연락처 관리")
+@Tag(name = "환자 기본정보", description = "환자 기본정보 등록·검색·수정·상태 관리")
 @RestController
 @RequestMapping("/api/patient")
 @RequiredArgsConstructor
@@ -49,7 +49,7 @@ public class PatientController {
 
     private final PatientService patientService;
 
-    @Operation(summary = "환자 등록", description = "일반환자 또는 임시환자를 등록합니다. 주소·연락처는 선택값이며 일반환자는 환자명·생년월일·주민등록번호가 필요합니다.")
+    @Operation(summary = "환자 등록", description = "일반환자 또는 임시환자를 등록합니다. 일반환자는 환자명·생년월일·주민등록번호가 필요합니다. 주소·연락처는 별도 contacts API로 관리합니다. tempPatientYn 생략 시 N입니다.")
     @ApiResponses({
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공", useReturnTypeSchema = true),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "요청값 형식 또는 입력값 검증 실패",
@@ -123,7 +123,7 @@ public class PatientController {
                         dto.getExcludePatientId()));
     }
 
-    @Operation(summary = "환자 상세 조회", description = "주소·연락처를 포함한 환자 상세정보를 조회합니다. 주민등록번호는 마스킹됩니다.")
+    @Operation(summary = "환자 상세 조회", description = "환자 기본정보를 조회합니다. 주소·연락처는 별도 contacts API에서 조회합니다. 주민등록번호는 마스킹되며 원문이 없으면 빈 문자열입니다.")
     @ApiResponses({
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공", useReturnTypeSchema = true),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "요청값 형식 또는 입력값 검증 실패",
@@ -141,7 +141,7 @@ public class PatientController {
         return ApiResponse.success(patientService.getPatient(patientId));
     }
 
-    @Operation(summary = "환자정보 및 주소·연락처 수정", description = "환자명은 필수입니다. 주소·연락처는 생략, null 또는 빈 문자열이면 기존 값이 삭제됩니다. 대표 지정 및 개별 비활성화는 지원하지 않습니다.")
+    @Operation(summary = "환자명 수정", description = "환자명만 수정합니다. 입력 문자열 기준 2~100자 검증 후 앞뒤 공백을 제거하며 제거 후 최소 길이는 재검증하지 않습니다. 주소·연락처는 별도 contacts API로 수정합니다.")
     @ApiResponses({
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공", useReturnTypeSchema = true),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "요청값 형식 또는 입력값 검증 실패",

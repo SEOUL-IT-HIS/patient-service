@@ -12,7 +12,7 @@
 | API Prefix | `/api/patient` |
 | Content-Type | `application/json` |
 | 인증 | 현재 소스에 별도 인증 설정 없음 |
-| 명세 기준 | `PatientController`, 요청·응답 DTO, `PatientServiceImpl`, `GlobalExceptionHandler` |
+| 명세 기준 | 전체 5개 컨트롤러, 요청·응답 DTO, 서비스·매퍼·리포지토리, `GlobalExceptionHandler` |
 
 > `patientId`는 모든 API에서 숫자가 아닌 UUID 문자열이다. 예: `550e8400-e29b-41d4-a716-446655440000`
 
@@ -20,7 +20,7 @@
 
 ### 2.1 성공 응답
 
-HTTP 상태는 `200 OK`이며 본문은 다음 형식이다.
+HTTP 상태는 `200 OK`이며 본문은 다음 형식이다. 단, 상태별 환자 수 조회(`/api/patient/procedure/count`)는 19절의 래퍼 없는 응답을 반환한다.
 
 ```json
 {
@@ -61,7 +61,7 @@ HTTP 상태는 `200 OK`이며 본문은 다음 형식이다.
 
 ### 2.4 환자 상세 데이터
 
-상세 조회 및 수정 API는 다음 구조를 `data`로 반환한다.
+상세 조회 및 수정 API는 다음 구조를 `data`로 반환한다. 주소·연락처는 포함하지 않으며 별도 `/api/patient/{patientId}/contacts` API로 관리한다.
 
 ```json
 {
@@ -75,10 +75,6 @@ HTTP 상태는 `200 OK`이며 본문은 다음 형식이다.
   "tempRegisterReason": null,
   "deathYn": "N",
   "deathDtm": null,
-  "zipCode": "06236",
-  "address": "서울특별시 강남구 테헤란로 123",
-  "addressDetail": "401호",
-  "phoneNo": "01012345678",
   "createdAt": "2026-08-14T10:30:00",
   "updatedAt": "2026-08-14T10:30:00"
 }
@@ -88,18 +84,14 @@ HTTP 상태는 `200 OK`이며 본문은 다음 형식이다.
 | --- | --- | --- | --- |
 | `patientId` | string(UUID) | N | 환자 ID |
 | `patientName` | string | N | 환자명 |
-| `residentRegNo` | string | Y | `YYMMDD-G******` 형식으로 마스킹된 주민등록번호. 임시환자는 `null` 가능 |
+| `residentRegNo` | string | N | `YYMMDD-G******` 형식으로 마스킹된 주민등록번호. 원문이 없으면 빈 문자열 `""` |
 | `birthDate` | string(date) | Y | 생년월일. 임시환자는 `null` 가능 |
 | `genderCd` | string | N | 성별 코드 |
 | `statusCd` | string | N | 환자 상태 코드 |
 | `tempPatientYn` | string | N | 임시환자 여부 |
-| `tempRegisterReason` | string | Y | 임시등록 사유. 정규환자 또는 사유가 없으면 `null` |
+| `tempRegisterReason` | string | Y | 임시등록 사유. 정규환자 신규 등록 시 `null`이며, 임시환자에서 정규환자로 전환한 경우 기존 사유 유지 |
 | `deathYn` | string | N | 사망 여부 |
 | `deathDtm` | string(datetime) | Y | 사망일시. 사망 정보가 없으면 `null` |
-| `zipCode` | string | Y | 우편번호. 입력되지 않은 경우 `null` |
-| `address` | string | Y | 기본주소. 입력되지 않은 경우 `null` |
-| `addressDetail` | string | Y | 상세주소. 입력되지 않은 경우 `null` |
-| `phoneNo` | string | Y | 숫자로 저장된 연락처. 입력되지 않은 경우 `null` |
 | `createdAt` | string(datetime) | N | 등록일시 |
 | `updatedAt` | string(datetime) | N | 최종 수정일시 |
 
@@ -140,16 +132,12 @@ HTTP 상태는 `200 OK`이며 본문은 다음 형식이다.
 
 | 필드 | 타입 | 필수 | 제약 조건 |
 | --- | --- | --- | --- |
-| `patientName` | string | 조건부 | 정규환자는 필수, 공백 제외 2~100자. 임시환자는 생략 가능하며 미입력 시 임시환자명 자동 생성 |
+| `patientName` | string | 조건부 | 정규환자는 필수. 입력 문자열 기준 2~100자 검증 후 앞뒤 공백 제거. 임시환자는 생략·null 가능하며 이름 자동 생성 |
 | `birthDate` | string(date) | 조건부 | 정규환자는 필수, 오늘 또는 과거 날짜. 임시환자는 생략 가능 |
 | `residentRegNo` | string | 조건부 | 정규환자는 필수, 하이픈 없는 숫자 13자리. 임시환자는 생략 가능 |
 | `genderCd` | string | Y | `01`, `02`, `03`, `04` |
-| `tempPatientYn` | string | Y | `Y`, `N`; `Y`는 임시환자, `N`은 정규환자 |
-| `tempRegisterReason` | string | 조건부 | 임시환자는 필수, 공백 제외 최대 200자. 정규환자는 저장 시 `null` 처리 |
-| `zipCode` | string | N | 입력 시 숫자 5자리 |
-| `address` | string | N | 최대 300자 |
-| `addressDetail` | string | N | 최대 300자 |
-| `phoneNo` | string | N | 입력 시 하이픈 없는 숫자 9~11자리 |
+| `tempPatientYn` | string | N | `Y`, `N`; 생략 시 `N`. 명시적인 null·빈 문자열은 400 |
+| `tempRegisterReason` | string | 조건부 | 임시환자는 필수. 입력 문자열 기준 최대 200자 검증 후 앞뒤 공백 제거. 정규환자는 저장 시 `null` 처리 |
 
 ```json
 {
@@ -157,17 +145,15 @@ HTTP 상태는 `200 OK`이며 본문은 다음 형식이다.
   "birthDate": "2000-08-13",
   "residentRegNo": "0008133123456",
   "genderCd": "01",
-  "tempPatientYn": "N",
-  "zipCode": "06236",
-  "address": "서울특별시 강남구 테헤란로 123",
-  "addressDetail": "401호",
-  "phoneNo": "01012345678"
+  "tempPatientYn": "N"
 }
 ```
 
 신규 환자의 환자관리상태코드는 서버에서 `ACTIVE`로 설정한다.
 
-주소·연락처 필드는 선택값이다. 생략하거나 빈 문자열을 전달하면 `null`로 저장한다.
+등록 요청·응답에는 주소·연락처 필드가 없다. 등록된 patientId로 별도 contacts API를 호출한다.
+
+이름 길이는 공백 제거 전에 검증하며 제거 후 최소 길이를 다시 검증하지 않는다. 임시환자 이름은 생략·null이면 자동 생성하고, 빈 문자열 또는 한 글자 공백은 길이 검증으로 400이다. 2~100자의 공백 문자열은 자동 생성한다. 주민등록번호를 입력하지 않을 때는 생략 또는 null을 사용한다(빈 문자열은 400).
 
 주민등록번호에서 계산한 생년월일과 `birthDate`가 일치해야 한다. 주민등록번호 일곱 번째 숫자가 `1`, `2`, `5`, `6`이면 1900년대, `3`, `4`, `7`, `8`이면 2000년대로 판정한다.
 
@@ -182,11 +168,7 @@ HTTP 상태는 `200 OK`이며 본문은 다음 형식이다.
   "residentRegNo": null,
   "genderCd": "03",
   "tempPatientYn": "Y",
-  "tempRegisterReason": "신원미상",
-  "zipCode": null,
-  "address": null,
-  "addressDetail": null,
-  "phoneNo": null
+  "tempRegisterReason": "신원미상"
 }
 ```
 
@@ -205,10 +187,6 @@ HTTP 상태는 `200 OK`이며 본문은 다음 형식이다.
     "genderCd": "01",
     "statusCd": "ACTIVE",
     "tempPatientYn": "N",
-    "zipCode": "06236",
-    "address": "서울특별시 강남구 테헤란로 123",
-    "addressDetail": "401호",
-    "phoneNo": "01012345678",
     "createdAt": "2026-08-14T10:30:00"
   }
 }
@@ -269,7 +247,7 @@ GET /api/patient/list?patientName=홍&birthDate=2000-08-13&statusCd=ACTIVE
 }
 ```
 
-조회 결과가 없으면 `data`는 `[]`이다. 임시환자는 `residentRegNo`와 `birthDate`가 `null`일 수 있다. 목록 응답에는 `deathDtm`과 `tempRegisterReason`이 포함되지 않으므로 필요하면 상세 조회 API를 사용한다.
+조회 결과가 없으면 `data`는 `[]`이다. 주민등록번호가 없는 환자의 `residentRegNo`는 빈 문자열 `""`이며, 임시환자의 `birthDate`는 `null`일 수 있다. 목록 응답에는 `deathDtm`과 `tempRegisterReason`이 포함되지 않으므로 필요하면 상세 조회 API를 사용한다.
 
 | HTTP | 조건 | 메시지 |
 | --- | --- | --- |
@@ -431,27 +409,19 @@ GET /api/patient/list?patientName=홍&birthDate=2000-08-13&statusCd=ACTIVE
 
 ### `PATCH /api/patient/{patientId}`
 
-환자명과 현재 주소·연락처를 함께 수정한다. 주민등록번호, 생년월일, 성별, 환자 상태, 임시환자 여부 및 사망정보는 이 API로 변경할 수 없다.
+환자명만 수정한다. 주소·연락처는 별도 contacts API로 수정한다. 주민등록번호, 생년월일, 성별, 환자 상태, 임시환자 여부 및 사망정보는 이 API로 변경할 수 없다.
 
 ### Request Body
 
 ```json
 {
-  "patientName": "홍길순",
-  "zipCode": "04524",
-  "address": "서울특별시 중구 세종대로 110",
-  "addressDetail": "502호",
-  "phoneNo": "01098765432"
+  "patientName": "홍길순"
 }
 ```
 
 | 필드 | 타입 | 필수 | 제약 조건 |
 | --- | --- | --- | --- |
-| `patientName` | string | Y | 공백 제외 2~100자; 저장 전 앞뒤 공백 제거 |
-| `zipCode` | string | N | 입력 시 숫자 5자리; 빈 문자열 또는 `null`이면 기존 값을 `null`로 변경 |
-| `address` | string | N | 최대 300자; 빈 문자열 또는 `null`이면 기존 값을 `null`로 변경 |
-| `addressDetail` | string | N | 최대 300자; 빈 문자열 또는 `null`이면 기존 값을 `null`로 변경 |
-| `phoneNo` | string | N | 입력 시 하이픈 없는 숫자 9~11자리; 빈 문자열 또는 `null`이면 기존 값을 `null`로 변경 |
+| `patientName` | string | Y | 입력 문자열 기준 2~100자 및 공백만인 값 불가; 검증 후 앞뒤 공백 제거. 제거 후 최소 길이는 재검증하지 않음 |
 
 ### Response — `200 OK`
 
@@ -461,7 +431,7 @@ GET /api/patient/list?patientName=홍&birthDate=2000-08-13&statusCd=ACTIVE
 
 | HTTP | 조건 | 메시지 |
 | --- | --- | --- |
-| `400` | 환자명·주소·연락처 검증 실패 또는 UUID 형식 오류 | 검증/형식 오류 메시지 |
+| `400` | 환자명 검증 실패 또는 UUID 형식 오류 | 검증/형식 오류 메시지 |
 | `404` | 환자 미존재 | `환자 정보를 찾을 수 없습니다.` |
 
 ## 10. 임시환자 정규환자 전환
@@ -629,8 +599,8 @@ PATCH /api/patient/550e8400-e29b-41d4-a716-446655440000/activate
 
 | `valid` | 의미 |
 | --- | --- |
-| `true` | 해당 UUID의 환자가 존재하고 `statusCd=ACTIVE` |
-| `false` | 환자가 존재하지 않거나 `statusCd=INACTIVE` |
+| `true` | 해당 UUID의 환자가 존재하고 `statusCd=ACTIVE`, `deathYn=N` |
+| `false` | 환자가 없거나 `statusCd=INACTIVE` 또는 `deathYn`이 `N`이 아님 |
 
 - 환자가 없어도 `404`가 아니라 `200 OK`, `valid=false`를 반환한다.
 - `statusCd=ACTIVE`이고 `deathYn=N`인 환자만 유효한 환자로 판정한다.
@@ -683,7 +653,7 @@ POST /api/patient/batch
 - Swagger UI: `http://{host}:8087/swagger-ui/index.html`
 - OpenAPI JSON: `http://{host}:8087/v3/api-docs`
 
-환자 기본정보, 환자 안전정보, 환자 통계 태그로 전체 19개 API를 제공한다.
+환자 기본정보, 환자 안전정보, 환자 주소·연락처, 환자 통계의 4개 태그로 전체 24개 API를 제공한다.
 각 API의 요청·응답 DTO, 파라미터, 성공 및 오류 응답을 확인할 수 있다.
 Swagger의 Try it out은 실제 API를 호출하므로 등록·수정 요청은 연결된 DB에 반영된다.
 
@@ -852,7 +822,7 @@ Oracle 스키마에는 `PATIENT_SAFETY_INFO.PINNED_YN` 컬럼(CHAR(1 BYTE), DEFA
 
 기본 경로: `/api/patient/{patientId}/contacts`
 
-기존 `PATIENT.ZIP_CODE`, `ADDRESS`, `ADDRESS_DETAIL`, `PHONE_NO`는 기존 서비스 호환을 위해 유지한다. 기존 값 11건은 `PATIENT_CONTACT`에도 초기 복사되어 목록에서 함께 조회된다. 이 API에서 새로 등록·수정·대표 지정·비활성화하는 데이터는 `PATIENT_CONTACT`만 변경하며 기존 `PATIENT` 주소·연락처 컬럼을 변경하지 않는다.
+현재 환자 기본정보 엔티티·요청·응답에는 주소·연락처 필드가 없다. 주소·연락처는 이 API를 통해 `PATIENT_CONTACT`에서 관리한다. 등록·수정·대표 지정·비활성화는 `PATIENT_CONTACT`만 변경한다.
 
 ### 20.1 응답 데이터
 
@@ -887,11 +857,11 @@ Oracle 스키마에는 `PATIENT_SAFETY_INFO.PINNED_YN` 컬럼(CHAR(1 BYTE), DEFA
 }
 ```
 
-우편번호는 숫자 5자리, 주소·상세주소는 최대 300자, 연락처는 하이픈 없는 숫자 9~11자리다. 네 값이 모두 비어 있으면 `400`이다. 활성 대표가 없는 환자의 첫 등록 항목은 자동 대표가 된다.
+우편번호는 숫자 5자리, 주소·상세주소는 최대 300자, 연락처는 하이픈 없는 숫자 9~11자리다. 형식·길이 검증은 공백 제거 전에 수행하며, 검증 후 앞뒤 공백을 제거하고 빈 값은 null로 저장한다. 네 값이 모두 비어 있으면 `400`이다. 활성 대표가 없는 환자의 첫 등록 항목은 자동 대표가 된다.
 
 ### 20.4 수정 — `PATCH /api/patient/{patientId}/contacts/{contactId}`
 
-등록과 같은 요청 본문을 사용한다. 비활성 연락처 수정은 `409`, 다른 환자 소유 또는 미존재 연락처는 `404`다.
+등록과 같은 요청 본문을 사용한다. 네 필드를 모두 교체하며 생략·null·빈 문자열은 해당 값을 null로 초기화한다. 네 값이 모두 비면 400이다. 비활성 연락처 수정은 `409`, 다른 환자 소유 또는 미존재 연락처는 `404`다.
 
 ### 20.5 대표 지정 — `PATCH /api/patient/{patientId}/contacts/{contactId}/primary`
 

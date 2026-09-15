@@ -13,7 +13,7 @@ public record PatientDetailResponseDto(
         UUID patientId,
         @Schema(description = "환자명", example = "홍길동")
         String patientName,
-        @Schema(description = "마스킹된 주민등록번호", example = "900101-1******")
+        @Schema(description = "마스킹된 주민등록번호. 원문이 없으면 빈 문자열", example = "900101-1******")
         String residentRegNo,
         @Schema(description = "생년월일", example = "1990-01-01")
         LocalDate birthDate,
@@ -23,7 +23,7 @@ public record PatientDetailResponseDto(
         PatientStatus statusCd,
         @Schema(description = "임시환자 여부 (Y/N)", example = "N")
         String tempPatientYn,
-        @Schema(description = "임시환자 등록 시 필수 사유", example = "신원 확인 중")
+        @Schema(description = "임시등록 사유. 정규환자 신규 등록 시 null, 임시환자에서 전환 시 기존 사유 유지", example = "신원 확인 중")
         String tempRegisterReason,
         @Schema(description = "사망 여부 (Y/N)", example = "N")
         String deathYn,
