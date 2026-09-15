@@ -7,7 +7,7 @@
 | 항목 | 값 |
 | --- | --- |
 | 서비스명 | `patient-service` |
-| 로컬 주소 | `http://localhost:8080` |
+| 로컬 주소 | `http://localhost:8087` |
 | 배포 주소 | 환경별 Patient Service 주소 사용 |
 | API Prefix | `/api/patient` |
 | Content-Type | `application/json` |
@@ -680,8 +680,8 @@ POST /api/patient/batch
 
 애플리케이션 실행 후 확인할 수 있다.
 
-- Swagger UI: `http://{host}:8080/swagger-ui/index.html`
-- OpenAPI JSON: `http://{host}:8080/v3/api-docs`
+- Swagger UI: `http://{host}:8087/swagger-ui/index.html`
+- OpenAPI JSON: `http://{host}:8087/v3/api-docs`
 
 환자 기본정보, 환자 안전정보, 환자 통계 태그로 전체 19개 API를 제공한다.
 각 API의 요청·응답 DTO, 파라미터, 성공 및 오류 응답을 확인할 수 있다.
