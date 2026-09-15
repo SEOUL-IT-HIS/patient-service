@@ -29,14 +29,6 @@ public record PatientDetailResponseDto(
         String deathYn,
         @Schema(description = "사망일시. 사망 처리 시 필수이며 미래 시각 불가")
         LocalDateTime deathDtm,
-        @Schema(description = "우편번호, 숫자 5자리", example = "06236")
-        String zipCode,
-        @Schema(description = "기본주소, 최대 300자", example = "서울특별시 강남구 테헤란로 123")
-        String address,
-        @Schema(description = "상세주소, 최대 300자", example = "401호")
-        String addressDetail,
-        @Schema(description = "연락처, 숫자 9~11자리", example = "01012345678")
-        String phoneNo,
         @Schema(description = "생성시각 (시간대 없는 서버 현지 시각)", example = "2026-09-09T10:00:00")
         LocalDateTime createdAt,
         @Schema(description = "최종 수정시각 (시간대 없는 서버 현지 시각)", example = "2026-09-09T10:00:00")

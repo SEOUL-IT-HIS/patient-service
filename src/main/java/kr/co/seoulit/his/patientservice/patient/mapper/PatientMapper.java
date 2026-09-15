@@ -22,10 +22,6 @@ public final class PatientMapper {
         entity.setStatusCd(PatientStatus.ACTIVE);
         entity.setTempPatientYn(dto.getTempPatientYn());
         entity.setTempRegisterReason(normalize(dto.getTempRegisterReason()));
-        entity.setZipCode(normalize(dto.getZipCode()));
-        entity.setAddress(normalize(dto.getAddress()));
-        entity.setAddressDetail(normalize(dto.getAddressDetail()));
-        entity.setPhoneNo(normalize(dto.getPhoneNo()));
         return entity;
     }
 
@@ -37,10 +33,6 @@ public final class PatientMapper {
                 patient.getGenderCd(),
                 patient.getStatusCd(),
                 patient.getTempPatientYn(),
-                patient.getZipCode(),
-                patient.getAddress(),
-                patient.getAddressDetail(),
-                patient.getPhoneNo(),
                 patient.getCreatedAt());
     }
 
@@ -79,10 +71,6 @@ public final class PatientMapper {
                 patient.getTempRegisterReason(),
                 patient.getDeathYn(),
                 patient.getDeathDtm(),
-                patient.getZipCode(),
-                patient.getAddress(),
-                patient.getAddressDetail(),
-                patient.getPhoneNo(),
                 patient.getCreatedAt(),
                 patient.getUpdatedAt());
     }

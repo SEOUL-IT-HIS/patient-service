@@ -195,10 +195,6 @@ public class PatientServiceImpl implements PatientService {
         PatientEntity patient = getPatientOrThrow(patientId);
 
         patient.setPatientName(dto.patientName().trim());
-        patient.setZipCode(normalize(dto.zipCode()));
-        patient.setAddress(normalize(dto.address()));
-        patient.setAddressDetail(normalize(dto.addressDetail()));
-        patient.setPhoneNo(normalize(dto.phoneNo()));
 
         PatientEntity updatedPatient = patientRepository.saveAndFlush(patient);
 

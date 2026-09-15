@@ -26,14 +26,6 @@ public class PatientRegisterResponseDto {
     private final PatientStatus statusCd;
     @Schema(description = "임시환자 여부 (Y/N)", example = "N")
     private final String tempPatientYn;
-    @Schema(description = "우편번호, 숫자 5자리", example = "06236")
-    private final String zipCode;
-    @Schema(description = "기본주소, 최대 300자", example = "서울특별시 강남구 테헤란로 123")
-    private final String address;
-    @Schema(description = "상세주소, 최대 300자", example = "401호")
-    private final String addressDetail;
-    @Schema(description = "연락처, 숫자 9~11자리", example = "01012345678")
-    private final String phoneNo;
     @Schema(description = "생성시각 (시간대 없는 서버 현지 시각)", example = "2026-09-09T10:00:00")
     private final LocalDateTime createdAt;
 }
