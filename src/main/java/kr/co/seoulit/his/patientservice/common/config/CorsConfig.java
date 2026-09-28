@@ -17,13 +17,7 @@ public class CorsConfig {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
-                registry
-                        .addMapping("/api/**")
-                        .allowedOriginPatterns(
-                                "http://localhost:3000", "http://127.0.0.1:3000", "http://192.168.*.*:3000")
-                        .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
-                        .allowedHeaders("*")
-                        .allowCredentials(true);
+                registry.addMapping("/api/**").allowedOriginPatterns("http://localhost:3000", "http://127.0.0.1:3000", "http://192.168.*.*:3000", "http://localhost:18080", "http://seolit.pe.kr:18080", "http//117.16.154.233:18080").allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS").allowedHeaders("*").allowCredentials(true);
             }
         };
     }
