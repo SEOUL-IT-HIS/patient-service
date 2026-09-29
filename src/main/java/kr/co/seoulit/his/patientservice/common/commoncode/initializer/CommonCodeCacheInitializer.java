@@ -18,13 +18,21 @@ public class CommonCodeCacheInitializer implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
-        commonCodeCacheService.loadAllCommonCodes();
+        try {
+            commonCodeCacheService.loadAllCommonCodes();
 
-        log.info(
-                "공통코드 로컬 캐시 적재 완료: 그룹 수={}, 항목 수={}, 그룹={}",
-                commonCodeCache.getGroupCount(),
-                commonCodeCache.getItemCount(),
-                commonCodeCache.getGroupCodes()
-        );
+            log.info(
+                    "공통코드 로컬 캐시 적재 완료: 그룹 수={}, 항목 수={}, 그룹={}",
+                    commonCodeCache.getGroupCount(),
+                    commonCodeCache.getItemCount(),
+                    commonCodeCache.getGroupCodes()
+            );
+        } catch (RuntimeException exception) {
+            log.warn(
+                    "admin-service에 연결할 수 없어 공통코드 캐시를 적재하지 못했습니다. "
+                            + "빈 캐시로 서비스를 시작합니다.",
+                    exception
+            );
+        }
     }
 }
