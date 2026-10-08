@@ -22,6 +22,8 @@ import kr.co.seoulit.his.patientservice.patient.dto.PatientDetailResponseDto;
 import kr.co.seoulit.his.patientservice.patient.dto.PatientDto;
 import kr.co.seoulit.his.patientservice.patient.dto.PatientDuplicateCheckDto;
 import kr.co.seoulit.his.patientservice.patient.dto.PatientListResponseDto;
+import kr.co.seoulit.his.patientservice.patient.dto.PatientMergeRequestDto;
+import kr.co.seoulit.his.patientservice.patient.dto.PatientConversionCandidatesRequestDto;
 import kr.co.seoulit.his.patientservice.patient.dto.PatientRegisterResponseDto;
 import kr.co.seoulit.his.patientservice.patient.dto.PatientTemporaryConversionRequestDto;
 import kr.co.seoulit.his.patientservice.patient.dto.PatientUpdateRequestDto;
@@ -123,6 +125,14 @@ public class PatientController {
                         dto.getExcludePatientId()));
     }
 
+    @Operation(summary = "임시환자 전환 후보 조회", description = "주민등록번호가 일치하는 통합 가능한 정규환자 후보를 조회합니다. 주민등록번호 원문은 응답하지 않습니다.")
+    @PostMapping("/duplicate-candidates")
+    public ApiResponse<List<PatientListResponseDto>> findTemporaryConversionCandidates(
+            @Valid @RequestBody PatientConversionCandidatesRequestDto dto) {
+        return ApiResponse.success(patientService.findTemporaryConversionCandidates(
+                dto.residentRegNo(), dto.excludePatientId()));
+    }
+
     @Operation(summary = "환자 상세 조회", description = "환자 기본정보를 조회합니다. 주소·연락처는 별도 contacts API에서 조회합니다. 주민등록번호는 마스킹되며 원문이 없으면 빈 문자열입니다.")
     @ApiResponses({
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공", useReturnTypeSchema = true),
@@ -183,6 +193,14 @@ public class PatientController {
             @Valid @RequestBody PatientTemporaryConversionRequestDto dto) {
         return ApiResponse.success(
                 patientService.convertTemporaryPatient(patientId, dto));
+    }
+
+    @Operation(summary = "임시환자를 기존 정규환자에 통합", description = "기존 정규환자를 대표 환자로 유지하고 임시환자 행에 대표 ID와 통합 시각을 기록합니다.")
+    @PostMapping("/{patientId}/merge")
+    public ApiResponse<PatientDetailResponseDto> mergeTemporaryPatient(
+            @Parameter(description = "통합할 원본 임시환자 UUID") @PathVariable UUID patientId,
+            @Valid @RequestBody PatientMergeRequestDto dto) {
+        return ApiResponse.success(patientService.mergeTemporaryPatient(patientId, dto));
     }
 
     @Operation(summary = "환자 사망정보 수정", description = "사망 여부와 사망일시를 변경합니다. 사망 처리 시 환자를 비활성화합니다.")

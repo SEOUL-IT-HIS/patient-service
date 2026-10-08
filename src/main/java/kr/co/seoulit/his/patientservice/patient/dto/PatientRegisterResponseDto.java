@@ -16,8 +16,10 @@ public class PatientRegisterResponseDto {
 
     @Schema(description = "환자 UUID", example = "550e8400-e29b-41d4-a716-446655440000")
     private final UUID patientId;
-    @Schema(description = "환자명", example = "홍길동")
+    @Schema(description = "환자명. 이름 미확인 임시환자는 6자리 임시환자번호 표시명", example = "000123")
     private final String patientName;
+    @Schema(description = "이름 미확인 임시환자에게 발급한 임시환자번호", example = "123")
+    private final Long tempPatientNo;
     @Schema(description = "생년월일", example = "1990-01-01")
     private final LocalDate birthDate;
     @Schema(description = "성별 공통코드 (01, 02, 03, 04)", example = "01")

@@ -11,6 +11,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface PatientRepository extends JpaRepository<PatientEntity, UUID> {
+    @Query(value = "SELECT TEMP_PATIENT_NO_SEQ.NEXTVAL FROM DUAL", nativeQuery = true)
+    Long nextTempPatientNo();
+
     @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT p FROM PatientEntity p WHERE p.patientId = :patientId")
     java.util.Optional<PatientEntity> lockPatient(@Param("patientId") UUID patientId);
@@ -20,6 +23,7 @@ public interface PatientRepository extends JpaRepository<PatientEntity, UUID> {
             WHERE (:patientName IS NULL OR p.patientName LIKE CONCAT('%', CONCAT(:patientName, '%')))
               AND (:birthDate IS NULL OR p.birthDate = :birthDate)
               AND (:statusCd IS NULL OR p.statusCd = :statusCd)
+              AND p.mergedToPatientId IS NULL
             ORDER BY p.createdAt DESC, p.patientId DESC
             """)
     org.springframework.data.domain.Page<PatientEntity> searchPatientPage(
@@ -38,6 +42,7 @@ public interface PatientRepository extends JpaRepository<PatientEntity, UUID> {
                            OR p.birthDate = :birthDate)
                       AND (:statusCd IS NULL
                            OR p.statusCd = :statusCd)
+                      AND p.mergedToPatientId IS NULL
                     ORDER BY p.createdAt DESC
                     """)
     List<PatientEntity> searchPatients(
@@ -45,11 +50,22 @@ public interface PatientRepository extends JpaRepository<PatientEntity, UUID> {
             @Param("birthDate") LocalDate birthDate,
             @Param("statusCd") PatientStatus statusCd);
 
-    boolean existsByResidentRegNo(String residentRegNo);
+    boolean existsByResidentRegNoAndMergedToPatientIdIsNull(String residentRegNo);
 
-    boolean existsByResidentRegNoAndPatientIdNot(
-            String residentRegNo,
-            UUID patientId);
+    boolean existsByResidentRegNoAndPatientIdNotAndMergedToPatientIdIsNull(
+            String residentRegNo, UUID patientId);
+
+    @Query("""
+            SELECT p FROM PatientEntity p
+            WHERE p.residentRegNo = :residentRegNo
+              AND p.patientId <> :excludePatientId
+              AND p.tempPatientYn = 'N'
+              AND p.mergedToPatientId IS NULL
+            ORDER BY p.createdAt ASC
+            """)
+    List<PatientEntity> findRegularMergeCandidates(
+            @Param("residentRegNo") String residentRegNo,
+            @Param("excludePatientId") UUID excludePatientId);
 
     boolean existsByPatientIdAndStatusCdAndDeathYn(
             UUID patientId,

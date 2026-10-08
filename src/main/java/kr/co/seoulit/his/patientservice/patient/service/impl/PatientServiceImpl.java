@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -22,9 +21,14 @@ import kr.co.seoulit.his.patientservice.patient.dto.PatientUpdateRequestDto;
 import kr.co.seoulit.his.patientservice.patient.dto.PatientValidationResponseDto;
 import kr.co.seoulit.his.patientservice.patient.dto.PatientBatchResponseDto;
 import kr.co.seoulit.his.patientservice.patient.dto.PatientTemporaryConversionRequestDto;
+import kr.co.seoulit.his.patientservice.patient.dto.PatientMergeRequestDto;
+import kr.co.seoulit.his.patientservice.patientcontact.dto.PatientContactCreateRequestDto;
 import kr.co.seoulit.his.patientservice.patient.entity.PatientEntity;
 import kr.co.seoulit.his.patientservice.patient.mapper.PatientMapper;
 import kr.co.seoulit.his.patientservice.patient.repository.PatientRepository;
+import kr.co.seoulit.his.patientservice.patientcontact.repository.PatientContactRepository;
+import kr.co.seoulit.his.patientservice.patientcontact.service.PatientContactService;
+import kr.co.seoulit.his.patientservice.patientsafety.repository.PatientSafetyRepository;
 import kr.co.seoulit.his.patientservice.patient.service.PatientService;
 import kr.co.seoulit.his.patientservice.patient.type.PatientStatus;
 import kr.co.seoulit.his.patientservice.patient.util.ResidentRegNoUtils;
@@ -38,6 +42,9 @@ import org.springframework.transaction.annotation.Transactional;
 public class PatientServiceImpl implements PatientService {
 
     private final PatientRepository patientRepository;
+    private final PatientContactRepository patientContactRepository;
+    private final PatientContactService patientContactService;
+    private final PatientSafetyRepository patientSafetyRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -68,9 +75,33 @@ public class PatientServiceImpl implements PatientService {
         }
 
         PatientEntity entity = PatientMapper.toEntity(dto);
+        if (temporaryPatient && entity.getPatientName() == null) {
+            entity.setTempPatientNo(patientRepository.nextTempPatientNo());
+        }
         PatientEntity savedPatient = patientRepository.save(entity);
 
+        if (hasContactInformation(dto)) {
+            patientContactService.createContact(
+                    savedPatient.getPatientId(),
+                    new PatientContactCreateRequestDto(
+                            dto.getZipCode(),
+                            dto.getAddress(),
+                            dto.getAddressDetail(),
+                            dto.getPhoneNo()));
+        }
+
         return PatientMapper.toRegisterResponseDto(savedPatient);
+    }
+
+    private boolean hasContactInformation(PatientDto dto) {
+        return hasText(dto.getZipCode())
+                || hasText(dto.getAddress())
+                || hasText(dto.getAddressDetail())
+                || hasText(dto.getPhoneNo());
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 
     private void validateRegularPatient(PatientDto dto) {
@@ -94,7 +125,7 @@ public class PatientServiceImpl implements PatientService {
             throw new BusinessException(ErrorCode.BIRTH_DATE_MISMATCH);
         }
 
-        if (patientRepository.existsByResidentRegNo(dto.getResidentRegNo())) {
+        if (patientRepository.existsByResidentRegNoAndMergedToPatientIdIsNull(dto.getResidentRegNo())) {
             throw new BusinessException(ErrorCode.DUPLICATE_RESIDENT_REG_NO);
         }
 
@@ -112,7 +143,7 @@ public class PatientServiceImpl implements PatientService {
         dto.setTempRegisterReason(dto.getTempRegisterReason().trim());
 
         if (dto.getPatientName() == null || dto.getPatientName().isBlank()) {
-            dto.setPatientName(generateTemporaryPatientName());
+            dto.setPatientName(null);
         } else {
             dto.setPatientName(dto.getPatientName().trim());
         }
@@ -131,19 +162,9 @@ public class PatientServiceImpl implements PatientService {
             throw new BusinessException(ErrorCode.BIRTH_DATE_MISMATCH);
         }
 
-        if (patientRepository.existsByResidentRegNo(dto.getResidentRegNo())) {
+        if (patientRepository.existsByResidentRegNoAndMergedToPatientIdIsNull(dto.getResidentRegNo())) {
             throw new BusinessException(ErrorCode.DUPLICATE_RESIDENT_REG_NO);
         }
-    }
-
-    private String generateTemporaryPatientName() {
-
-        String suffix = UUID.randomUUID()
-                .toString()
-                .substring(0, 8)
-                .toUpperCase();
-
-        return "무명환자-" + suffix;
     }
 
     @Override
@@ -152,10 +173,68 @@ public class PatientServiceImpl implements PatientService {
         ResidentRegNoUtils.extractBirthDate(residentRegNo);
 
         return excludePatientId == null
-                ? patientRepository.existsByResidentRegNo(residentRegNo)
-                : patientRepository.existsByResidentRegNoAndPatientIdNot(
+                ? patientRepository.existsByResidentRegNoAndMergedToPatientIdIsNull(residentRegNo)
+                : patientRepository.existsByResidentRegNoAndPatientIdNotAndMergedToPatientIdIsNull(
                         residentRegNo,
                         excludePatientId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PatientListResponseDto> findTemporaryConversionCandidates(
+            String residentRegNo, UUID excludePatientId) {
+        ResidentRegNoUtils.extractBirthDate(residentRegNo);
+        PatientEntity source = getUnmergedPatientOrThrow(excludePatientId);
+        if (!"Y".equals(source.getTempPatientYn())) {
+            throw new BusinessException(ErrorCode.NOT_TEMPORARY_PATIENT);
+        }
+        return patientRepository.findRegularMergeCandidates(residentRegNo, excludePatientId)
+                .stream()
+                .map(PatientMapper::toListResponseDto)
+                .toList();
+    }
+
+    @Override
+    public PatientDetailResponseDto mergeTemporaryPatient(
+            UUID temporaryPatientId, PatientMergeRequestDto request) {
+        PatientEntity source = patientRepository.lockPatient(temporaryPatientId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PATIENT_NOT_FOUND));
+        PatientEntity target = patientRepository.lockPatient(request.targetPatientId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.PATIENT_NOT_FOUND));
+
+        if (source.getMergedToPatientId() != null) {
+            throw new BusinessException(ErrorCode.PATIENT_ALREADY_MERGED);
+        }
+        if (!"Y".equals(source.getTempPatientYn())) {
+            throw new BusinessException(ErrorCode.NOT_TEMPORARY_PATIENT);
+        }
+        if (target.getMergedToPatientId() != null || "Y".equals(target.getTempPatientYn())) {
+            throw new BusinessException(ErrorCode.INVALID_MERGE_TARGET);
+        }
+
+        LocalDate residentBirthDate = ResidentRegNoUtils.extractBirthDate(request.residentRegNo());
+        if (!request.residentRegNo().equals(target.getResidentRegNo())
+                || !residentBirthDate.equals(target.getBirthDate())) {
+            throw new BusinessException(ErrorCode.PATIENT_IDENTITY_MISMATCH);
+        }
+
+        boolean targetHasPrimaryContact = patientContactRepository
+                .findByPatientIdAndPrimaryYnAndActiveYn(target.getPatientId(), "Y", "Y")
+                .isPresent();
+        patientContactRepository.moveToPatient(
+                source.getPatientId(), target.getPatientId(), targetHasPrimaryContact ? "Y" : "N");
+
+        long targetPinnedCount = patientSafetyRepository
+                .countByPatientIdAndActiveYnAndPinnedYn(target.getPatientId(), "Y", "Y");
+        int remainingPinnedSlots = (int) Math.max(0, 2 - targetPinnedCount);
+        patientSafetyRepository.unpinOverflowingSourceSafetyInfo(
+                source.getPatientId(), remainingPinnedSlots);
+        patientSafetyRepository.moveToPatient(source.getPatientId(), target.getPatientId());
+
+        source.setMergedToPatientId(target.getPatientId());
+        source.setMergedAt(LocalDateTime.now());
+        patientRepository.saveAndFlush(source);
+        return PatientMapper.toDetailResponseDto(target);
     }
 
     @Override
@@ -183,16 +262,26 @@ public class PatientServiceImpl implements PatientService {
                                         PatientEntity::getPatientId,
                                         Function.identity()));
 
-        return distinctIds.stream()
-                .map(patientsById::get)
-                .filter(Objects::nonNull)
+        LinkedHashSet<UUID> canonicalIds = new LinkedHashSet<>();
+        for (UUID id : distinctIds) {
+            PatientEntity patient = patientsById.get(id);
+            if (patient == null) continue;
+            canonicalIds.add(patient.getMergedToPatientId() == null
+                    ? patient.getPatientId() : patient.getMergedToPatientId());
+        }
+        Map<UUID, PatientEntity> canonicalPatients = patientRepository.findAllById(canonicalIds)
+                .stream()
+                .collect(Collectors.toMap(PatientEntity::getPatientId, Function.identity()));
+        return canonicalIds.stream()
+                .map(canonicalPatients::get)
+                .filter(patient -> patient != null)
                 .map(PatientMapper::toBatchResponseDto)
                 .toList();
     }
 
     @Override
     public PatientDetailResponseDto updatePatientInfo(UUID patientId, PatientUpdateRequestDto dto) {
-        PatientEntity patient = getPatientOrThrow(patientId);
+        PatientEntity patient = getUnmergedPatientOrThrow(patientId);
 
         patient.setPatientName(dto.patientName().trim());
 
@@ -206,7 +295,7 @@ public class PatientServiceImpl implements PatientService {
             UUID patientId,
             PatientTemporaryConversionRequestDto dto
     ) {
-        PatientEntity patient = getPatientOrThrow(patientId);
+        PatientEntity patient = getUnmergedPatientOrThrow(patientId);
 
         if (!"Y".equals(patient.getTempPatientYn())) {
             throw new BusinessException(
@@ -229,7 +318,7 @@ public class PatientServiceImpl implements PatientService {
             throw new BusinessException(ErrorCode.BIRTH_DATE_MISMATCH);
         }
 
-        boolean duplicated = patientRepository.existsByResidentRegNoAndPatientIdNot(
+        boolean duplicated = patientRepository.existsByResidentRegNoAndPatientIdNotAndMergedToPatientIdIsNull(
                 dto.residentRegNo(), patientId);
 
         if (duplicated) {
@@ -250,7 +339,7 @@ public class PatientServiceImpl implements PatientService {
     @Override
     public PatientDetailResponseDto updateDeathStatus(
             UUID patientId, PatientDeathUpdateRequestDto dto) {
-        PatientEntity patient = getPatientOrThrow(patientId);
+        PatientEntity patient = getUnmergedPatientOrThrow(patientId);
 
         if ("Y".equals(dto.deathYn())) {
             if (dto.deathDtm() == null) {
@@ -276,7 +365,7 @@ public class PatientServiceImpl implements PatientService {
 
     @Override
     public PatientDetailResponseDto deactivatePatient(UUID patientId) {
-        PatientEntity patient = getPatientOrThrow(patientId);
+        PatientEntity patient = getUnmergedPatientOrThrow(patientId);
 
         if (patient.getStatusCd() == PatientStatus.INACTIVE) {
             return PatientMapper.toDetailResponseDto(patient);
@@ -291,7 +380,7 @@ public class PatientServiceImpl implements PatientService {
 
     @Override
     public PatientDetailResponseDto activatePatient(UUID patientId) {
-        PatientEntity patient = getPatientOrThrow(patientId);
+        PatientEntity patient = getUnmergedPatientOrThrow(patientId);
 
         if ("Y".equals(patient.getDeathYn())) {
             throw new BusinessException(ErrorCode.DECEASED_PATIENT_CANNOT_BE_ACTIVATED);
@@ -311,8 +400,10 @@ public class PatientServiceImpl implements PatientService {
     @Override
     @Transactional(readOnly = true)
     public PatientValidationResponseDto validatePatient(UUID patientId) {
-        boolean valid =
-                patientRepository.existsByPatientIdAndStatusCdAndDeathYn(
+        PatientEntity patient = patientRepository.findById(patientId).orElse(null);
+        boolean valid = patient != null
+                && patient.getMergedToPatientId() == null
+                && patientRepository.existsByPatientIdAndStatusCdAndDeathYn(
                         patientId,
                         PatientStatus.ACTIVE,
                         "N"
@@ -332,6 +423,14 @@ public class PatientServiceImpl implements PatientService {
     private PatientEntity getPatientOrThrow(UUID patientId) {
         return patientRepository.findById(patientId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PATIENT_NOT_FOUND));
+    }
+
+    private PatientEntity getUnmergedPatientOrThrow(UUID patientId) {
+        PatientEntity patient = getPatientOrThrow(patientId);
+        if (patient.getMergedToPatientId() != null) {
+            throw new BusinessException(ErrorCode.PATIENT_ALREADY_MERGED);
+        }
+        return patient;
     }
 
     private static String normalize(String value) {

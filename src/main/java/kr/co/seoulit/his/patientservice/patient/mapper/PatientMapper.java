@@ -28,7 +28,8 @@ public final class PatientMapper {
     public static PatientRegisterResponseDto toRegisterResponseDto(PatientEntity patient) {
         return new PatientRegisterResponseDto(
                 patient.getPatientId(),
-                patient.getPatientName(),
+                patientNameForDisplay(patient),
+                patient.getTempPatientNo(),
                 patient.getBirthDate(),
                 patient.getGenderCd(),
                 patient.getStatusCd(),
@@ -39,7 +40,8 @@ public final class PatientMapper {
     public static PatientListResponseDto toListResponseDto(PatientEntity patient) {
         return new PatientListResponseDto(
                 patient.getPatientId(),
-                patient.getPatientName(),
+                patientNameOrEmpty(patient),
+                patient.getTempPatientNo(),
                 maskResidentRegNo(patient.getResidentRegNo()),
                 patient.getBirthDate(),
                 patient.getGenderCd(),
@@ -53,7 +55,7 @@ public final class PatientMapper {
     public static PatientBatchResponseDto toBatchResponseDto(PatientEntity patient) {
         return new PatientBatchResponseDto(
                 patient.getPatientId(),
-                patient.getPatientName(),
+                patientNameForDisplay(patient),
                 patient.getBirthDate(),
                 patient.getGenderCd(),
                 patient.getStatusCd());
@@ -62,7 +64,8 @@ public final class PatientMapper {
     public static PatientDetailResponseDto toDetailResponseDto(PatientEntity patient) {
         return new PatientDetailResponseDto(
                 patient.getPatientId(),
-                patient.getPatientName(),
+                patientNameOrEmpty(patient),
+                patient.getTempPatientNo(),
                 maskResidentRegNo(patient.getResidentRegNo()),
                 patient.getBirthDate(),
                 patient.getGenderCd(),
@@ -72,7 +75,9 @@ public final class PatientMapper {
                 patient.getDeathYn(),
                 patient.getDeathDtm(),
                 patient.getCreatedAt(),
-                patient.getUpdatedAt());
+                patient.getUpdatedAt(),
+                patient.getMergedToPatientId(),
+                patient.getMergedAt());
     }
 
     private static String maskResidentRegNo(String residentRegNo) {
@@ -90,5 +95,19 @@ public final class PatientMapper {
 
     private static String normalize(String value) {
         return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private static String patientNameOrEmpty(PatientEntity patient) {
+        return patient.getPatientName() == null ? "" : patient.getPatientName();
+    }
+
+    private static String patientNameForDisplay(PatientEntity patient) {
+        String patientName = patient.getPatientName();
+        if (patientName != null && !patientName.isBlank()) {
+            return patientName;
+        }
+        return !"Y".equals(patient.getTempPatientYn()) || patient.getTempPatientNo() == null
+                ? ""
+                : String.format("%06d", patient.getTempPatientNo());
     }
 }

@@ -13,6 +13,8 @@ public record PatientDetailResponseDto(
         UUID patientId,
         @Schema(description = "환자명", example = "홍길동")
         String patientName,
+        @Schema(description = "이름 미확인 임시환자에게 발급한 임시환자번호", example = "123")
+        Long tempPatientNo,
         @Schema(description = "마스킹된 주민등록번호. 원문이 없으면 빈 문자열", example = "900101-1******")
         String residentRegNo,
         @Schema(description = "생년월일", example = "1990-01-01")
@@ -32,5 +34,9 @@ public record PatientDetailResponseDto(
         @Schema(description = "생성시각 (시간대 없는 서버 현지 시각)", example = "2026-09-09T10:00:00")
         LocalDateTime createdAt,
         @Schema(description = "최종 수정시각 (시간대 없는 서버 현지 시각)", example = "2026-09-09T10:00:00")
-        LocalDateTime updatedAt) {
+        LocalDateTime updatedAt,
+        @Schema(description = "통합된 경우 대표 환자 UUID")
+        UUID mergedToPatientId,
+        @Schema(description = "통합 처리 시각")
+        LocalDateTime mergedAt) {
 }

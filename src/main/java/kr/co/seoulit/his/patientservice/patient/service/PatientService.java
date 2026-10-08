@@ -14,6 +14,7 @@ import kr.co.seoulit.his.patientservice.patient.dto.PatientValidationResponseDto
 import kr.co.seoulit.his.patientservice.patient.dto.PatientTemporaryConversionRequestDto;
 import kr.co.seoulit.his.patientservice.patient.type.PatientStatus;
 import kr.co.seoulit.his.patientservice.patient.dto.PatientBatchResponseDto;
+import kr.co.seoulit.his.patientservice.patient.dto.PatientMergeRequestDto;
 
 public interface PatientService {
     kr.co.seoulit.his.patientservice.patient.dto.PatientPageResponseDto getPatientPage(
@@ -21,6 +22,12 @@ public interface PatientService {
     PatientRegisterResponseDto createPatient(PatientDto patientDto);
 
     boolean isResidentRegNoDuplicate(String residentRegNo, UUID excludePatientId);
+
+    List<PatientListResponseDto> findTemporaryConversionCandidates(
+            String residentRegNo, UUID excludePatientId);
+
+    PatientDetailResponseDto mergeTemporaryPatient(
+            UUID temporaryPatientId, PatientMergeRequestDto request);
 
     List<PatientListResponseDto> getPatients(
             String patientName, LocalDate birthDate, PatientStatus statusCd);

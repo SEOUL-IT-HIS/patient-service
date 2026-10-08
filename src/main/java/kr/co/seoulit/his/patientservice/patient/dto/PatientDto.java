@@ -19,7 +19,7 @@ import lombok.Setter;
 public class PatientDto {
 
     @Size(min = 2, max = 100, message = "환자명은 2자 이상 100자 이하여야 합니다.")
-    @Schema(description = "환자명; 일반환자 필수. 입력 문자열 기준 2~100자 검증 후 trim, 이후 길이 재검증 없음. 임시환자 생략·null 시 이름 자동 생성", example = "홍길동")
+    @Schema(description = "환자명; 일반환자는 필수. 이름 미확인 임시환자는 생략·null로 전달하고 별도 임시환자번호를 발급받음", example = "홍길동")
     private String patientName;
 
     @PastOrPresent(message = "생년월일은 미래 날짜일 수 없습니다.")
@@ -43,4 +43,20 @@ public class PatientDto {
     @Size(max = 200, message = "임시등록 사유는 200자 이하여야 합니다.")
     @Schema(description = "임시환자 필수 사유. 입력 문자열 기준 최대 200자 검증 후 trim", example = "신원 확인 중")
     private String tempRegisterReason;
+
+    @Pattern(regexp = "^$|^\\d{5}$", message = "우편번호는 숫자 5자리여야 합니다.")
+    @Schema(description = "우편번호. 숫자 5자리", example = "06236")
+    private String zipCode;
+
+    @Size(max = 300, message = "주소는 300자 이하여야 합니다.")
+    @Schema(description = "기본주소. 최대 300자", example = "서울특별시 강남구 테헤란로 123")
+    private String address;
+
+    @Size(max = 300, message = "상세주소는 300자 이하여야 합니다.")
+    @Schema(description = "상세주소. 최대 300자", example = "401호")
+    private String addressDetail;
+
+    @Pattern(regexp = "^$|^\\d{9,11}$", message = "연락처는 숫자 9~11자리여야 합니다.")
+    @Schema(description = "연락처. 하이픈 없는 숫자 9~11자리", example = "01012345678")
+    private String phoneNo;
 }

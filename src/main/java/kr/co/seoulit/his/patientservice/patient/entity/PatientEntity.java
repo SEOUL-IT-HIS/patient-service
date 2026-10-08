@@ -44,6 +44,9 @@ public class PatientEntity {
     @Column(name = "PATIENT_NAME")
     private String patientName;
 
+    @Column(name = "TEMP_PATIENT_NO", precision = 12, columnDefinition = "NUMBER(12)")
+    private Long tempPatientNo;
+
     @Column(name = "BIRTH_DATE")
     private LocalDate birthDate;
 
@@ -84,6 +87,13 @@ public class PatientEntity {
 
     @Column(name = "UPDATED_AT")
     private LocalDateTime updatedAt;
+
+    @JdbcTypeCode(SqlTypes.VARCHAR)
+    @Column(name = "MERGED_TO_PATIENT_ID", length = 36, columnDefinition = "VARCHAR2(36 CHAR)")
+    private UUID mergedToPatientId;
+
+    @Column(name = "MERGED_AT")
+    private LocalDateTime mergedAt;
 
     @PrePersist
     public void prePersist() {

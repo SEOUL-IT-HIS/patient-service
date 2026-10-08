@@ -10,7 +10,7 @@ import kr.co.seoulit.his.patientservice.patient.type.PatientStatus;
 public record PatientBatchResponseDto(
         @Schema(description = "환자 UUID", example = "550e8400-e29b-41d4-a716-446655440000")
         UUID patientId,
-        @Schema(description = "환자명", example = "홍길동")
+        @Schema(description = "환자명. 이름 미확인 임시환자는 6자리 임시환자번호 표시명", example = "000123")
         String patientName,
         @Schema(description = "생년월일", example = "1990-01-01")
         LocalDate birthDate,

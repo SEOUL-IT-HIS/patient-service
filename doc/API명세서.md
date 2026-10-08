@@ -67,6 +67,7 @@ HTTP 상태는 `200 OK`이며 본문은 다음 형식이다. 단, 상태별 환�
 {
   "patientId": "550e8400-e29b-41d4-a716-446655440000",
   "patientName": "홍길동",
+  "tempPatientNo": null,
   "residentRegNo": "000813-3******",
   "birthDate": "2000-08-13",
   "genderCd": "01",
@@ -76,14 +77,17 @@ HTTP 상태는 `200 OK`이며 본문은 다음 형식이다. 단, 상태별 환�
   "deathYn": "N",
   "deathDtm": null,
   "createdAt": "2026-08-14T10:30:00",
-  "updatedAt": "2026-08-14T10:30:00"
+  "updatedAt": "2026-08-14T10:30:00",
+  "mergedToPatientId": null,
+  "mergedAt": null
 }
 ```
 
 | 필드 | 타입 | Nullable | 설명 |
 | --- | --- | --- | --- |
 | `patientId` | string(UUID) | N | 환자 ID |
-| `patientName` | string | N | 환자명 |
+| `patientName` | string | N | 확인된 환자명. 이름 미확인 임시환자는 빈 문자열이며 화면 표시명은 임시환자번호로 구성 |
+| `tempPatientNo` | number | Y | 이름 미확인 임시환자에게 발급한 고유 번호 |
 | `residentRegNo` | string | N | `YYMMDD-G******` 형식으로 마스킹된 주민등록번호. 원문이 없으면 빈 문자열 `""` |
 | `birthDate` | string(date) | Y | 생년월일. 임시환자는 `null` 가능 |
 | `genderCd` | string | N | 성별 코드 |
@@ -94,6 +98,8 @@ HTTP 상태는 `200 OK`이며 본문은 다음 형식이다. 단, 상태별 환�
 | `deathDtm` | string(datetime) | Y | 사망일시. 사망 정보가 없으면 `null` |
 | `createdAt` | string(datetime) | N | 등록일시 |
 | `updatedAt` | string(datetime) | N | 최종 수정일시 |
+| `mergedToPatientId` | string(UUID) | Y | 통합 원본인 경우 대표 환자 ID |
+| `mergedAt` | string(datetime) | Y | 통합 처리 시각 |
 
 ## 3. API 요약
 
@@ -104,9 +110,11 @@ HTTP 상태는 `200 OK`이며 본문은 다음 형식이다. 단, 상태별 환�
 | `GET` | `/api/patient/list/page` | 환자 관리 화면용 15명 단위 페이지 조회 |
 | `POST` | `/api/patient/batch` | 환자 ID 목록 기반 배치 조회 |
 | `POST` | `/api/patient/duplicate-check` | 주민등록번호 중복 확인 |
+| `POST` | `/api/patient/duplicate-candidates` | 임시환자 정규화 통합 후보 조회 |
 | `GET` | `/api/patient/{patientId}` | 환자 상세 조회 |
 | `PATCH` | `/api/patient/{patientId}` | 환자정보 수정 |
 | `PATCH` | `/api/patient/{patientId}/convert-from-temporary` | 임시환자를 정규환자로 전환 |
+| `POST` | `/api/patient/{patientId}/merge` | 임시환자를 기존 정규환자에 통합 |
 | `PATCH` | `/api/patient/{patientId}/death-status` | 사망 정보 수정 |
 | `PATCH` | `/api/patient/{patientId}/deactivate` | 환자 비활성화 |
 | `PATCH` | `/api/patient/{patientId}/activate` | 환자 활성화 |
@@ -132,12 +140,16 @@ HTTP 상태는 `200 OK`이며 본문은 다음 형식이다. 단, 상태별 환�
 
 | 필드 | 타입 | 필수 | 제약 조건 |
 | --- | --- | --- | --- |
-| `patientName` | string | 조건부 | 정규환자는 필수. 입력 문자열 기준 2~100자 검증 후 앞뒤 공백 제거. 임시환자는 생략·null 가능하며 이름 자동 생성 |
+| `patientName` | string | 조건부 | 정규환자는 필수. 입력 문자열 기준 2~100자 검증 후 앞뒤 공백 제거. 이름 미확인 임시환자는 생략·null 가능하며 DB에도 null로 저장 |
 | `birthDate` | string(date) | 조건부 | 정규환자는 필수, 오늘 또는 과거 날짜. 임시환자는 생략 가능 |
 | `residentRegNo` | string | 조건부 | 정규환자는 필수, 하이픈 없는 숫자 13자리. 임시환자는 생략 가능 |
 | `genderCd` | string | Y | `01`, `02`, `03`, `04` |
 | `tempPatientYn` | string | N | `Y`, `N`; 생략 시 `N`. 명시적인 null·빈 문자열은 400 |
 | `tempRegisterReason` | string | 조건부 | 임시환자는 필수. 입력 문자열 기준 최대 200자 검증 후 앞뒤 공백 제거. 정규환자는 저장 시 `null` 처리 |
+| `zipCode` | string | N | 우편번호. 입력 시 숫자 5자리 |
+| `address` | string | N | 기본주소. 최대 300자 |
+| `addressDetail` | string | N | 상세주소. 최대 300자 |
+| `phoneNo` | string | N | 연락처. 입력 시 하이픈 없는 숫자 9~11자리 |
 
 ```json
 {
@@ -145,15 +157,19 @@ HTTP 상태는 `200 OK`이며 본문은 다음 형식이다. 단, 상태별 환�
   "birthDate": "2000-08-13",
   "residentRegNo": "0008133123456",
   "genderCd": "01",
-  "tempPatientYn": "N"
+  "tempPatientYn": "N",
+  "zipCode": "06236",
+  "address": "서울특별시 강남구 테헤란로 123",
+  "addressDetail": "401호",
+  "phoneNo": "01012345678"
 }
 ```
 
 신규 환자의 환자관리상태코드는 서버에서 `ACTIVE`로 설정한다.
 
-등록 요청·응답에는 주소·연락처 필드가 없다. 등록된 patientId로 별도 contacts API를 호출한다.
+주소·연락처 네 필드 중 하나 이상을 전달하면 새 환자에 대표·활성 연락처로 함께 저장한다. 네 필드가 모두 비어 있으면 연락처 행을 만들지 않는다. 환자 기본정보와 연락처는 한 트랜잭션에서 저장한다.
 
-이름 길이는 공백 제거 전에 검증하며 제거 후 최소 길이를 다시 검증하지 않는다. 임시환자 이름은 생략·null이면 자동 생성하고, 빈 문자열 또는 한 글자 공백은 길이 검증으로 400이다. 2~100자의 공백 문자열은 자동 생성한다. 주민등록번호를 입력하지 않을 때는 생략 또는 null을 사용한다(빈 문자열은 400).
+이름 길이는 공백 제거 전에 검증하며 제거 후 최소 길이를 다시 검증하지 않는다. 임시환자 이름은 생략·null 또는 2~100자의 공백 문자열이면 DB에 null로 저장하고 임시환자번호를 발급한다. 빈 문자열 또는 한 글자 공백은 길이 검증으로 400이다. 주민등록번호를 입력하지 않을 때는 생략 또는 null을 사용한다(빈 문자열은 400).
 
 주민등록번호에서 계산한 생년월일과 `birthDate`가 일치해야 한다. 주민등록번호 일곱 번째 숫자가 `1`, `2`, `5`, `6`이면 1900년대, `3`, `4`, `7`, `8`이면 2000년대로 판정한다.
 
@@ -172,7 +188,9 @@ HTTP 상태는 `200 OK`이며 본문은 다음 형식이다. 단, 상태별 환�
 }
 ```
 
-위 요청에서 환자명은 서버가 `무명환자-{임의문자열}` 형식으로 생성한다.
+위 요청에서 환자명은 null로 저장되고 `tempPatientNo`가 발급된다. 이름 미확인 임시환자의 화면 표시명은 번호만 6자리로 패딩한 `000001` 형식이다.
+
+DB 배포 전 [이름 컬럼 nullable 변경 SQL](임시환자이름_스키마변경.sql)과 [임시환자번호 스키마 변경 SQL](임시환자번호_스키마변경.sql)을 적용해야 한다. 두 번째 스크립트는 번호 컬럼·시퀀스·고유 제약조건을 만들고, 기존 이름 미확인 임시환자에 번호를 발급한다. 이전 기본값 `무명환자`가 저장된 임시환자는 이름을 null로 되돌린 뒤 번호를 발급한다.
 
 ### Response — `200 OK`
 
@@ -183,6 +201,7 @@ HTTP 상태는 `200 OK`이며 본문은 다음 형식이다. 단, 상태별 환�
   "data": {
     "patientId": "550e8400-e29b-41d4-a716-446655440000",
     "patientName": "홍길동",
+    "tempPatientNo": null,
     "birthDate": "2000-08-13",
     "genderCd": "01",
     "statusCd": "ACTIVE",
@@ -234,6 +253,7 @@ GET /api/patient/list?patientName=홍&birthDate=2000-08-13&statusCd=ACTIVE
     {
       "patientId": "550e8400-e29b-41d4-a716-446655440000",
       "patientName": "홍길동",
+      "tempPatientNo": null,
       "residentRegNo": "000813-3******",
       "birthDate": "2000-08-13",
       "genderCd": "01",
@@ -247,7 +267,7 @@ GET /api/patient/list?patientName=홍&birthDate=2000-08-13&statusCd=ACTIVE
 }
 ```
 
-조회 결과가 없으면 `data`는 `[]`이다. 주민등록번호가 없는 환자의 `residentRegNo`는 빈 문자열 `""`이며, 임시환자의 `birthDate`는 `null`일 수 있다. 목록 응답에는 `deathDtm`과 `tempRegisterReason`이 포함되지 않으므로 필요하면 상세 조회 API를 사용한다.
+조회 결과가 없으면 `data`는 `[]`이다. 주민등록번호가 없는 환자의 `residentRegNo`는 빈 문자열 `""`이며, 임시환자의 `birthDate`는 `null`일 수 있다. 이름 미확인 임시환자의 화면 표시명은 `tempPatientNo`를 숫자만 6자리로 패딩한 값이다. 목록 응답에는 `deathDtm`과 `tempRegisterReason`이 포함되지 않으므로 필요하면 상세 조회 API를 사용한다.
 
 | HTTP | 조건 | 메시지 |
 | --- | --- | --- |
@@ -305,7 +325,7 @@ GET /api/patient/list?patientName=홍&birthDate=2000-08-13&statusCd=ACTIVE
 }
 ```
 
-중복 ID는 최초 한 건만 조회하며, 응답은 요청 ID 순서를 유지한다. 존재하지 않는 ID는 응답에서 제외하고, 모든 ID가 존재하지 않으면 `data`는 `[]`이다.
+중복 ID는 최초 한 건만 조회하며, 응답은 요청 ID 순서를 유지한다. 통합된 환자 ID가 들어오면 대표 환자로 바꾸어 반환하고, 여러 ID가 같은 대표 환자를 가리키면 대표 환자는 한 번만 반환한다. 존재하지 않는 ID는 응답에서 제외하고, 모든 ID가 존재하지 않으면 `data`는 `[]`이다.
 
 ### Response — `200 OK`
 
@@ -325,7 +345,7 @@ GET /api/patient/list?patientName=홍&birthDate=2000-08-13&statusCd=ACTIVE
 }
 ```
 
-배치 응답은 서비스 간 환자 식별·표시에 필요한 최소 필드만 제공한다. 주민등록번호, 사망일시, 등록일시 및 수정일시는 포함하지 않는다. 호출 서비스는 응답 필드 중 필요한 값만 사용한다.
+배치 응답은 서비스 간 환자 식별·표시에 필요한 최소 필드만 제공한다. 이름 미확인 임시환자의 `patientName`은 임시환자번호만 6자리로 패딩한 숫자 표시명이다. 주민등록번호, 사망일시, 등록일시 및 수정일시는 포함하지 않는다. 호출 서비스는 응답 필드 중 필요한 값만 사용한다.
 
 ### 주요 오류
 
@@ -385,6 +405,19 @@ GET /api/patient/list?patientName=홍&birthDate=2000-08-13&statusCd=ACTIVE
 이 API의 `true`는 사용 가능하다는 뜻이 아니라 **중복됨**을 뜻한다.
 
 이 API는 화면의 사전 확인을 위한 API다. 실제 환자 등록과 정규환자 전환 처리에서도 주민등록번호 중복을 다시 검증한다.
+
+### 임시환자 전환 후보 조회 — `POST /api/patient/duplicate-candidates`
+
+임시환자 정규화 화면에서 기존 정규환자를 선택할 수 있도록 주민등록번호와 일치하는 통합 후보를 조회한다. 요청 형식은 중복확인과 같지만 `excludePatientId`는 필수다.
+
+```json
+{
+  "residentRegNo": "0008133123456",
+  "excludePatientId": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+응답은 일반 환자 목록 항목 배열이며, 주민등록번호는 마스킹된다. 통합되지 않은 정규환자 중 주민등록번호가 일치하는 후보를 반환한다. 생년월일이 입력한 주민등록번호와 다르면 화면에서 선택할 수 없으며 통합 API도 다시 검증한다. 결과가 없으면 `data`는 `[]`이다.
 
 ## 8. 환자 상세 조회
 
@@ -480,6 +513,31 @@ GET /api/patient/list?patientName=홍&birthDate=2000-08-13&statusCd=ACTIVE
 | `400` | 주민등록번호와 생년월일 불일치 | `주민등록번호와 생년월일이 일치하지 않습니다.` |
 | `404` | 환자 미존재 | `환자 정보를 찾을 수 없습니다.` |
 | `409` | 다른 환자와 주민등록번호 중복 | `이미 등록된 주민등록번호입니다.` |
+
+### 기존 정규환자에 임시환자 통합 — `POST /api/patient/{patientId}/merge`
+
+기존 정규환자를 대표 환자로 유지하고 임시환자 행에 대표 환자 ID와 통합 시각을 기록한다. 대표 환자의 인적정보는 변경하지 않으며, 임시환자 행은 삭제하지 않는다. 원본 임시환자의 주소·연락처와 안전정보는 대표 환자로 옮긴다. 대표 환자에 활성 대표 연락처가 이미 있으면 원본의 대표 표시는 해제한다. 안전정보 상단 고정은 대표 환자당 2건 제한을 지키며, 자리가 부족하면 원본의 최신 고정 항목부터 유지한다.
+
+```json
+{
+  "targetPatientId": "550e8400-e29b-41d4-a716-446655440001",
+  "residentRegNo": "0008133123456"
+}
+```
+
+통합 처리 시 원본이 미통합 임시환자인지, 대상이 미통합 정규환자인지, 요청한 주민등록번호가 대상 정보와 일치하는지 서버에서 다시 확인한다. 성공 응답은 대표 환자의 상세 데이터다. 통합 원본의 상세 데이터에는 `mergedToPatientId`, `mergedAt`이 포함된다. 통합 원본은 목록 검색에서 제외되고 환자 활성 검증에 실패한다.
+
+주민등록번호 및 생년월일은 식별 확인에만 사용하며, 주민등록번호 원문은 후보 조회 응답에 포함하지 않는다.
+
+배포 전 [Oracle 스키마 변경 SQL](임시환자통합_스키마변경.sql)을 적용해야 한다. 서비스는 `spring.jpa.hibernate.ddl-auto=validate`로 실행되므로 컬럼이 없으면 시작 단계에서 실패한다.
+
+| HTTP | 조건 | 메시지 |
+| --- | --- | --- |
+| `400` | 원본이 임시환자가 아님 | `임시환자만 정규환자로 전환할 수 있습니다.` |
+| `400` | 대상이 통합되지 않은 정규환자가 아님 | `통합 대상은 통합되지 않은 정규환자여야 합니다.` |
+| `404` | 원본 또는 대상 환자 미존재 | `환자 정보를 찾을 수 없습니다.` |
+| `409` | 원본이 이미 통합됨 | `이미 다른 환자에 통합된 환자입니다.` |
+| `409` | 대상의 신원정보가 요청과 불일치 | `선택한 환자의 신원정보가 입력한 정보와 일치하지 않습니다.` |
 
 ## 11. 사망 정보 수정
 

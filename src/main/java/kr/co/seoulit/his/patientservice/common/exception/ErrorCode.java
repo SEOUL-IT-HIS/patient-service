@@ -42,6 +42,18 @@ public enum ErrorCode {
             HttpStatus.BAD_REQUEST,
             "임시환자만 정규환자로 전환할 수 있습니다."),
 
+    INVALID_MERGE_TARGET(
+            HttpStatus.BAD_REQUEST,
+            "통합 대상은 통합되지 않은 정규환자여야 합니다."),
+
+    PATIENT_ALREADY_MERGED(
+            HttpStatus.CONFLICT,
+            "이미 다른 환자에 통합된 환자입니다."),
+
+    PATIENT_IDENTITY_MISMATCH(
+            HttpStatus.CONFLICT,
+            "선택한 환자의 신원정보가 입력한 정보와 일치하지 않습니다."),
+
     DECEASED_PATIENT_CANNOT_BE_ACTIVATED(
             HttpStatus.BAD_REQUEST,
             "사망 상태인 환자는 활성화할 수 없습니다. 먼저 사망정보를 해제해 주세요."),
