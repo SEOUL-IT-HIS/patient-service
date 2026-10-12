@@ -64,7 +64,7 @@ public class PatientContactController {
         );
     }
 
-    @Operation(summary = "환자 주소·연락처 등록", description = "네 값 중 하나 이상 필요합니다. 형식·길이 검증 후 trim하고 빈 값은 null로 저장합니다. 활성 대표가 없으면 자동 대표가 됩니다.")
+    @Operation(summary = "환자 주소·연락처 등록", description = "네 값 중 하나 이상 필요합니다. primaryYn=Y로 대표 지정이 가능하며, 생략 또는 N이면 일반 항목으로 저장합니다. 형식·길이 검증 후 trim하고 빈 값은 null로 저장합니다.")
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공", useReturnTypeSchema = true),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "입력값 검증 또는 요청 본문 형식 오류",

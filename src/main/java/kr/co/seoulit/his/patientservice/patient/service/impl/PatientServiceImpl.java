@@ -87,7 +87,8 @@ public class PatientServiceImpl implements PatientService {
                             dto.getZipCode(),
                             dto.getAddress(),
                             dto.getAddressDetail(),
-                            dto.getPhoneNo()));
+                            dto.getPhoneNo(),
+                            dto.getPrimaryYn()));
         }
 
         return PatientMapper.toRegisterResponseDto(savedPatient);

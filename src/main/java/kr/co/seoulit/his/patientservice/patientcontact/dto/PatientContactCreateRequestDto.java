@@ -37,6 +37,10 @@ public record PatientContactCreateRequestDto(
         @Schema(
                 description = "연락처. 하이픈 없는 숫자 9~11자리",
                 example = "01012345678")
-        String phoneNo
+        String phoneNo,
+
+        @Pattern(regexp = "^$|^[YN]$", message = "대표 여부는 Y 또는 N이어야 합니다.")
+        @Schema(description = "대표 여부. 생략 시 N", example = "N", defaultValue = "N")
+        String primaryYn
 ) {
 }

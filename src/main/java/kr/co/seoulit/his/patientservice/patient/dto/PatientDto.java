@@ -59,4 +59,8 @@ public class PatientDto {
     @Pattern(regexp = "^$|^\\d{9,11}$", message = "연락처는 숫자 9~11자리여야 합니다.")
     @Schema(description = "연락처. 하이픈 없는 숫자 9~11자리", example = "01012345678")
     private String phoneNo;
+
+    @Pattern(regexp = "^[YN]$", message = "대표 여부는 Y 또는 N이어야 합니다.")
+    @Schema(description = "주소·연락처 대표 여부. 생략 시 N", example = "N", defaultValue = "N")
+    private String primaryYn = "N";
 }

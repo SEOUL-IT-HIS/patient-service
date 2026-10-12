@@ -46,7 +46,17 @@ public class PatientContactServiceImpl
 
         ContactValues values = normalizeAndValidate(request.zipCode(), request.address(), request.addressDetail(), request.phoneNo());
 
-        boolean primary = patientContactRepository.findByPatientIdAndPrimaryYnAndActiveYn(patientId, "Y", "Y").isEmpty();
+        boolean primary = "Y".equals(request.primaryYn());
+
+        if (primary) {
+            PatientContactEntity currentPrimary = patientContactRepository
+                    .findByPatientIdAndPrimaryYnAndActiveYn(patientId, "Y", "Y")
+                    .orElse(null);
+            if (currentPrimary != null) {
+                currentPrimary.clearPrimary();
+                patientContactRepository.flush();
+            }
+        }
 
         PatientContactEntity contact = PatientContactEntity.create(patientId, values.zipCode(), values.address(), values.addressDetail(), values.phoneNo(), primary);
 
